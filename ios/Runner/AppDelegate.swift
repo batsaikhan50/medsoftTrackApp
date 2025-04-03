@@ -9,6 +9,7 @@ import UserNotifications
   var locationManager: CLLocationManager?
   var flutterChannel: FlutterMethodChannel?
   var xToken: String?
+  var xServer: String?
   var xMedsoftToken: String?
 
   override func application(
@@ -34,6 +35,14 @@ import UserNotifications
         if let args = call.arguments as? [String: Any], let token = args["xToken"] as? String {
           self?.xToken = token
           print("Received xToken: \(self?.xToken ?? "No token")")
+        }
+        result(nil)
+      } else if call.method == "sendXServerToAppDelegate" {
+        if let args = call.arguments as? [String: Any],
+          let hospital = args["xServer"] as? String
+        {
+          self?.xServer = hospital
+          print("Received xServer: \(self?.xServer ?? "No token")")
         }
         result(nil)
       } else if call.method == "sendXMedsoftTokenToAppDelegate" {
@@ -218,6 +227,12 @@ import UserNotifications
       return
     }
 
+    guard let hospital = xServer else {
+      NSLog("Error: xServer not available")
+      return
+    }
+
+
     guard let medsoftToken = xMedsoftToken else {
       NSLog("Error: xMedsoftToken not available")
       return
@@ -232,7 +247,7 @@ import UserNotifications
     request.httpMethod = "POST"
     request.addValue(token, forHTTPHeaderField: "X-Token")
 
-    request.addValue("ui.medsoft.care", forHTTPHeaderField: "X-Server")
+    request.addValue(hospital, forHTTPHeaderField: "X-Server")
     request.addValue(medsoftToken, forHTTPHeaderField: "X-Medsoft-Token")
     request.addValue("application/json", forHTTPHeaderField: "Content-Type")
 
