@@ -180,8 +180,53 @@ import UserNotifications
     }
   }
 
+  func checkNotificationPermissionAndPromptIfNeeded() {
+    UNUserNotificationCenter.current().getNotificationSettings { settings in
+      DispatchQueue.main.async {
+        switch settings.authorizationStatus {
+        case .notDetermined:
+          self.requestNotificationPermission()
+
+        case .denied:
+          self.showNotificationPermissionDialog()
+
+        case .authorized, .provisional, .ephemeral:
+          NSLog("Notification permission granted or provisional.")
+
+        @unknown default:
+          NSLog("Unknown notification permission status.")
+        }
+      }
+    }
+  }
+
+  func showNotificationPermissionDialog() {
+    let alertController = UIAlertController(
+      title: "Notification Permission Needed",
+      message:
+        "We need notification permission to send you important alerts. Would you like to enable it in Settings?",
+      preferredStyle: .alert
+    )
+
+    let settingsAction = UIAlertAction(title: "Yes", style: .default) { _ in
+      if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+        UIApplication.shared.open(settingsUrl, options: [:], completionHandler: nil)
+      }
+    }
+
+    let cancelAction = UIAlertAction(title: "No", style: .cancel, handler: nil)
+
+    alertController.addAction(settingsAction)
+    alertController.addAction(cancelAction)
+
+    if let topController = UIApplication.shared.keyWindow?.rootViewController {
+      topController.present(alertController, animated: true, completion: nil)
+    }
+  }
+
   override func applicationDidBecomeActive(_ application: UIApplication) {
     checkLocationAuthorizationAndPromptIfNeeded()
+    checkNotificationPermissionAndPromptIfNeeded()
   }
 
   func checkLocationAuthorizationAndPromptIfNeeded() {
