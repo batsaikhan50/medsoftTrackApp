@@ -11,6 +11,8 @@ import UserNotifications
   var xToken: String?
   var xServer: String?
   var xMedsoftToken: String?
+  var didRequestAlwaysPermission = false
+  var lastAuthorizationStatus: CLAuthorizationStatus?
 
   override func application(
     _ application: UIApplication,
@@ -111,6 +113,7 @@ import UserNotifications
     flutterChannel?.invokeMethod("updateLocation", arguments: locationData)
 
     if CLLocationManager.authorizationStatus() == .authorizedWhenInUse {
+      didRequestAlwaysPermission = true
       requestAlwaysLocationPermission()
     }
 
@@ -136,23 +139,58 @@ import UserNotifications
 
   func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
     let status = manager.authorizationStatus
+
+    if status == .authorizedWhenInUse && lastAuthorizationStatus == .authorizedAlways {
+      showLocationPermissionDialog()
+    }
+
+    lastAuthorizationStatus = status
+
     switch status {
-    case .authorizedAlways, .authorizedWhenInUse:
+    case .authorizedAlways:
+      NSLog("Authorized Always")
       manager.startUpdatingLocation()
-      if status == .authorizedAlways {
-        requestNotificationPermission()
-      } else if status == .authorizedWhenInUse {
-        requestAlwaysLocationPermission();
+      requestNotificationPermission()
+      didRequestAlwaysPermission = false  // Reset flag
+
+    case .authorizedWhenInUse:
+      Timer.scheduledTimer(withTimeInterval: 5.0, repeats: false) { _ in
+        // Your timed action here
+        NSLog("Timer fired")
       }
+      if didRequestAlwaysPermission && CLLocationManager.authorizationStatus() != .authorizedAlways
+      {
+        showLocationPermissionDialog()
+        didRequestAlwaysPermission = false  // Reset flag
+      }
+      NSLog("Authorized When In Use")
+      manager.startUpdatingLocation()
+
     case .denied, .restricted:
-
       NSLog("Location authorization denied or restricted.")
+      showLocationPermissionDialog()
       manager.stopUpdatingLocation()
-    case .notDetermined:
 
+    case .notDetermined:
+      NSLog("Not determined")
+      locationManager?.requestWhenInUseAuthorization()
       break
     @unknown default:
       NSLog("Unknown location authorization status")
+    }
+  }
+
+  override func applicationDidBecomeActive(_ application: UIApplication) {
+    checkLocationAuthorizationAndPromptIfNeeded()
+  }
+
+  func checkLocationAuthorizationAndPromptIfNeeded() {
+    guard let manager = locationManager else { return }
+
+    let status = manager.authorizationStatus
+
+    if status == .authorizedWhenInUse {
+      showLocationPermissionDialog()
     }
   }
 
@@ -216,9 +254,9 @@ import UserNotifications
     if CLLocationManager.authorizationStatus() == .authorizedWhenInUse {
       locationManager?.requestAlwaysAuthorization()
     }
-    if CLLocationManager.authorizationStatus() == .authorizedWhenInUse {
-      showLocationPermissionDialog()
-    }
+    // if CLLocationManager.authorizationStatus() == .authorizedWhenInUse {
+    //   showLocationPermissionDialog()
+    // }
   }
 
   private func sendLocationToAPI(location: CLLocation) {
@@ -231,7 +269,6 @@ import UserNotifications
       NSLog("Error: xServer not available")
       return
     }
-
 
     guard let medsoftToken = xMedsoftToken else {
       NSLog("Error: xMedsoftToken not available")
