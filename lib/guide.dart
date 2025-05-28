@@ -16,6 +16,10 @@ class GuideScreen extends StatelessWidget {
       'caption': 'Алхам 3: "Background App Refresh" тохиргоог асаах',
       'asset': 'assets/guide/background.png',
     },
+    {
+      'caption': 'Алхам 4: "Cellural Data" тохиргоог асаах',
+      'asset': 'assets/guide/celluralData.png',
+    },
   ];
 
   @override
@@ -31,6 +35,7 @@ class GuideScreen extends StatelessWidget {
         itemBuilder: (context, index) {
           final step = guideSteps[index];
           return _buildGuideAccordion(
+            context: context, // ✅ Add this line
             caption: step['caption']!,
             assetPath: step['asset']!,
           );
@@ -40,6 +45,7 @@ class GuideScreen extends StatelessWidget {
   }
 
   Widget _buildGuideAccordion({
+    required BuildContext context,
     required String caption,
     required String assetPath,
   }) {
@@ -59,12 +65,58 @@ class GuideScreen extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.asset(
-                assetPath,
-                fit: BoxFit.fitWidth,
-                width: double.infinity,
+            child: GestureDetector(
+              onTap: () {
+                showGeneralDialog(
+                  context: context,
+                  barrierDismissible: true,
+                  barrierLabel: "Close",
+                  barrierColor: Colors.black87,
+                  transitionDuration: const Duration(milliseconds: 200),
+                  pageBuilder: (context, animation, secondaryAnimation) {
+                    return GestureDetector(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Scaffold(
+                        backgroundColor: Colors.black87,
+                        body: Stack(
+                          children: [
+                            InteractiveViewer(
+                              panEnabled: true,
+                              minScale: 1.0,
+                              maxScale: 4.0,
+                              child: Center(
+                                child: Image.asset(
+                                  assetPath,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              top: 32,
+                              right: 16,
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                  size: 30,
+                                ),
+                                onPressed: () => Navigator.of(context).pop(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset(
+                  assetPath,
+                  fit: BoxFit.fitWidth,
+                  width: double.infinity,
+                ),
               ),
             ),
           ),

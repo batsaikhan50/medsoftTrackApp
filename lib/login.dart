@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -144,7 +145,9 @@ class _LoginScreenState extends State<LoginScreen> {
           await prefs.setString('X-Medsoft-Token', token);
           await prefs.setString('Username', _usernameController.text);
 
-          await FlutterAppBadger.updateBadgeCount(0);
+          // if (Platform.isIOS || Platform.isAndroid) {
+          //   await FlutterAppBadger.updateBadgeCount(0);
+          // }
 
           _loadSharedPreferencesData();
 

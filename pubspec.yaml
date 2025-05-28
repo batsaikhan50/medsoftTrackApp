@@ -75,6 +75,7 @@ flutter:
     - assets/guide/always.png
     - assets/guide/precise.png
     - assets/guide/background.png
+    - assets/guide/celluralData.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
