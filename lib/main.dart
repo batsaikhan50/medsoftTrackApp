@@ -347,7 +347,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
               ),
               child: Center(
                 child: Image.asset(
-                  'assets/icon/locationlogo.png',
+                  'assets/icon/locationlogologin.png',
                   width: 150,
                   height: 150,
                 ),
