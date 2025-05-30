@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_app_badger/flutter_app_badger.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:new_project_location/constants.dart';
 import 'package:new_project_location/guide.dart';
@@ -100,6 +101,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _initializeNotifications();
+
+    FlutterAppBadger.removeBadge();
 
     platform.setMethodCallHandler(_methodCallHandler);
     _sendXTokenToAppDelegate();

@@ -328,7 +328,6 @@ import UserNotifications
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
     request.addValue(token, forHTTPHeaderField: "X-Token")
-
     request.addValue(hospital, forHTTPHeaderField: "X-Server")
     request.addValue(medsoftToken, forHTTPHeaderField: "X-Medsoft-Token")
     request.addValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -357,18 +356,15 @@ import UserNotifications
 
         if response.statusCode == 200 {
           NSLog("Successfully sent location data.")
+        } else if response.statusCode == 401 || response.statusCode == 403
+          || response.statusCode == 400
+        {
+          DispatchQueue.main.async {
+            self.clearSharedPreferencesAndNavigateToLogin()
+          }
         } else {
-          NSLog("response.statusCode: \(response.statusCode)")
-
-          if response.statusCode == 401 || response.statusCode == 403 || response.statusCode == 400
-          {
-            DispatchQueue.main.async {
-              self.clearSharedPreferencesAndNavigateToLogin()
-            }
-          } else {
-            if let data = data, let responseString = String(data: data, encoding: .utf8) {
-              NSLog("Error response: \(responseString)")
-            }
+          if let data = data, let responseString = String(data: data, encoding: .utf8) {
+            NSLog("Error response: \(responseString)")
           }
         }
       }
