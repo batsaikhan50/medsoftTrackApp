@@ -134,6 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
       debugPrint('Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
+        FlutterAppBadger.removeBadge();
         final Map<String, dynamic> data = json.decode(response.body);
         if (data['success'] == true) {
           SharedPreferences prefs = await SharedPreferences.getInstance();

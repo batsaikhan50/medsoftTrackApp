@@ -1,3 +1,5 @@
+import AdSupport
+import AppTrackingTransparency
 import BackgroundTasks
 import CoreLocation
 import Flutter
@@ -31,7 +33,7 @@ import UserNotifications
       } else if call.method == "sendLocationToAPIByButton" {
         self?.sendLocationToAPIByButton(result: result)
       } else if call.method == "startLocationManagerAfterLogin" {
-        self?.startLocationManagerAfterLogin()
+        self?.requestTrackingPermissionIfNeededAndStartLocation()
         result(nil)
       } else if call.method == "sendXTokenToAppDelegate" {
         if let args = call.arguments as? [String: Any], let token = args["xToken"] as? String {
@@ -72,6 +74,31 @@ import UserNotifications
     scheduleBackgroundTask()
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  func requestTrackingPermissionIfNeededAndStartLocation() {
+    if #available(iOS 14, *) {
+      ATTrackingManager.requestTrackingAuthorization { status in
+        switch status {
+        case .authorized:
+          NSLog("ATT: Tracking authorized")
+          DispatchQueue.main.async {
+            self.startLocationManagerAfterLogin()
+          }
+
+        case .denied, .restricted, .notDetermined:
+          NSLog("ATT: Tracking denied or restricted")
+          DispatchQueue.main.async {
+            self.startLocationManagerAfterLogin()
+          }
+
+        @unknown default:
+          break
+        }
+      }
+    } else {
+      self.startLocationManagerAfterLogin()
+    }
   }
 
   func requestNotificationPermission() {

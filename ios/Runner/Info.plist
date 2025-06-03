@@ -30,16 +30,17 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Ambulance tracking app needs access to your location at all times.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key><string>This app continuously tracks your location, even in the background, to monitor ambulance movement and ensure worker safety during active emergency duty.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>Ambulance tracking app needs access to your location even in the background.</string>
+	<string>This app needs your location at all times to send real-time position updates to our emergency response system for safety tracking.</string>
 	<key>NSLocationUsageDescription</key>
-	<string>Ambulance tracking app needs access to your location.</string>
+	<string>Your location is used to report ambulance movement for real-time monitoring and safety of field personnel.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Ambulance tracking app needs access to your location when in use.</string>
+	<string>This app collects your location during active use to update ambulance tracking systems for safety oversight.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>This app uses your location and tracking data to ensure real-time safety monitoring during ambulance operations.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
