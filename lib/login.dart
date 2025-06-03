@@ -22,10 +22,14 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  final TextEditingController _numberController = TextEditingController();
+
   bool _isLoading = false;
   String _errorMessage = '';
   String _selectedRole = '';
   bool _isPasswordVisible = false;
+  int _selectedToggleIndex = 0; //0-Иргэн, 1-103
+  double _dragPosition = 0.0;
 
   List<String> _serverNames = [];
   Map<String, String> sharedPreferencesData = {};
@@ -92,6 +96,12 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
+    _dragPosition =
+        _selectedToggleIndex *
+        ((MediaQueryData.fromWindow(WidgetsBinding.instance.window).size.width -
+                32 -
+                8) /
+            2);
     _fetchServerData();
     _getInitialScreenString();
   }
@@ -146,10 +156,6 @@ class _LoginScreenState extends State<LoginScreen> {
           await prefs.setString('X-Medsoft-Token', token);
           await prefs.setString('Username', _usernameController.text);
 
-          // if (Platform.isIOS || Platform.isAndroid) {
-          //   await FlutterAppBadger.updateBadgeCount(0);
-          // }
-
           _loadSharedPreferencesData();
 
           Navigator.pushReplacement(
@@ -196,16 +202,118 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
+  Widget buildAnimatedToggle() {
+    List<Map<String, String>> toggleOptions = [
+      {'label': 'Иргэн', 'icon': 'assets/icon/userWithPhone.png'},
+      {'label': '103', 'icon': 'assets/icon/ambulanceCar.png'},
+    ];
+
+    double totalWidth = MediaQuery.of(context).size.width - 32;
+    double knobWidth = (totalWidth - 8) / 2;
+
+    return GestureDetector(
+      onHorizontalDragUpdate: (details) {
+        setState(() {
+          _dragPosition += details.delta.dx;
+          _dragPosition = _dragPosition.clamp(0, knobWidth);
+        });
+      },
+      onHorizontalDragEnd: (_) {
+        setState(() {
+          if (_dragPosition < (knobWidth / 2)) {
+            _selectedToggleIndex = 0;
+            _dragPosition = 0;
+          } else {
+            _selectedToggleIndex = 1;
+            _dragPosition = knobWidth;
+          }
+        });
+      },
+      onTapDown: (details) {
+        final dx = details.localPosition.dx;
+        setState(() {
+          if (dx < totalWidth / 2) {
+            _selectedToggleIndex = 0;
+            _dragPosition = 0;
+          } else {
+            _selectedToggleIndex = 1;
+            _dragPosition = knobWidth;
+          }
+        });
+      },
+      child: Container(
+        height: 56,
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: Colors.grey[300],
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: Stack(
+          children: [
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              left: _dragPosition,
+              top: 0,
+              bottom: 0,
+              width: knobWidth,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                decoration: BoxDecoration(
+                  color:
+                      _selectedToggleIndex == 0
+                          ? const Color(0xFF1E88E5)
+                          : const Color(0xFFE53935),
+                  borderRadius: BorderRadius.circular(25),
+                ),
+              ),
+            ),
+
+            Row(
+              children: List.generate(toggleOptions.length, (index) {
+                final option = toggleOptions[index];
+                final isSelected = index == _selectedToggleIndex;
+
+                return Expanded(
+                  child: Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          option['icon']!,
+                          width: 24,
+                          height: 24,
+                          color: isSelected ? Colors.white : Colors.black87,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          option['label']!,
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : Colors.black87,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-        padding: const EdgeInsets.fromLTRB(16.0, 150.0, 16.0, 16.0),
+        padding: const EdgeInsets.fromLTRB(16.0, 100.0, 16.0, 16.0),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // const SizedBox(height: 20),
               Image.asset('assets/icon/locationlogologin.png', height: 150),
 
               Text(
@@ -218,7 +326,23 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 20),
 
-              if (_serverNames.isNotEmpty)
+              buildAnimatedToggle(),
+              const SizedBox(height: 20),
+
+              if (_selectedToggleIndex == 0)
+                TextField(
+                  controller: _numberController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Нэг удаагын код',
+                    prefixIcon: Icon(Icons.vpn_key),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              if (_selectedToggleIndex == 0) const SizedBox(height: 20),
+              if (_serverNames.isNotEmpty && _selectedToggleIndex == 1)
                 Container(
                   height: 56,
                   padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -260,45 +384,49 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                 ),
-              const SizedBox(height: 20),
 
-              TextField(
-                controller: _usernameController,
-                decoration: InputDecoration(
-                  labelText: 'Нэвтрэх нэр',
-                  prefixIcon: const Icon(Icons.person),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
+              if (_serverNames.isNotEmpty && _selectedToggleIndex == 1)
+                const SizedBox(height: 20),
 
-              TextField(
-                controller: _passwordController,
-                obscureText: !_isPasswordVisible, // Use the toggle state
-                decoration: InputDecoration(
-                  labelText: 'Нууц үг',
-                  prefixIcon: const Icon(Icons.lock),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _isPasswordVisible
-                          ? Icons.visibility
-                          : Icons.visibility_off,
+              if (_selectedToggleIndex == 1)
+                TextField(
+                  controller: _usernameController,
+                  decoration: InputDecoration(
+                    labelText: 'Нэвтрэх нэр',
+                    prefixIcon: const Icon(Icons.person),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _isPasswordVisible =
-                            !_isPasswordVisible; // Toggle visibility
-                      });
-                    },
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
+
+              if (_selectedToggleIndex == 1) const SizedBox(height: 20),
+
+              if (_selectedToggleIndex == 1)
+                TextField(
+                  controller: _passwordController,
+                  obscureText: !_isPasswordVisible,
+                  decoration: InputDecoration(
+                    labelText: 'Нууц үг',
+                    prefixIcon: const Icon(Icons.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              if (_selectedToggleIndex == 1) const SizedBox(height: 20),
 
               if (_errorMessage.isNotEmpty)
                 Padding(
@@ -309,26 +437,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-              // 'Нууц үг мартсан?' Label
-              Align(
-                alignment: Alignment.centerRight,
-                child: GestureDetector(
-                  onTap: () {
-                    // Handle the forgot password action here
-                    // You can navigate to another screen or show a dialog
-                  },
-                  child: Text(
-                    'Нууц үг мартсан?',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: Color(0xFF009688),
+              if (_selectedToggleIndex == 1)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: GestureDetector(
+                    onTap: () {},
+                    child: Text(
+                      'Нууц үг мартсан?',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Color(0xFF009688),
+                      ),
                     ),
                   ),
                 ),
-              ),
-
-              const SizedBox(height: 10),
+              if (_selectedToggleIndex == 1) const SizedBox(height: 10),
 
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
