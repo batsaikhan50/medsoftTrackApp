@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_app_badger/flutter_app_badger.dart';
 import 'package:http/http.dart' as http;
 import 'package:new_project_location/constants.dart';
+import 'package:new_project_location/webview_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
 import 'main.dart';
@@ -545,8 +546,33 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
               Align(
                 alignment: Alignment.centerRight,
                 child: GestureDetector(
-                  onTap: () {
-                    // Add forgot password logic
+                  onTap: () async {
+                    // SharedPreferences prefs =
+                    //     await SharedPreferences.getInstance();
+                    // String? baseUrl = prefs.getString('forgetUrl');
+                    // String? hospital = _selectedRole['name'];
+
+                    // if (baseUrl != null &&
+                    //     baseUrl.isNotEmpty &&
+                    //     hospital != null) {
+                    //   Navigator.push(
+                    //     // ignore: use_build_context_synchronously
+                    //     context,
+                    //     MaterialPageRoute(
+                    //       builder:
+                    //           (context) => WebViewScreen(
+                    //             url:
+                    //                 '$baseUrl/forget?callback=medsofttrack://callback',
+                    //             title: hospital,
+                    //           ),
+                    //     ),
+                    //   );
+                    // } else {
+                    //   setState(() {
+                    //     _errorMessage =
+                    //         'Нууц үг солихын тулд эмнэлэг сонгоно уу.';
+                    //   });
+                    // }
                   },
                   child: const Text(
                     'Нууц үг мартсан?',
