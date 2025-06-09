@@ -21,23 +21,39 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _passwordCheckController =
+      TextEditingController();
+  final TextEditingController _regNoController = TextEditingController();
+  final TextEditingController _firstnameController = TextEditingController();
+  final TextEditingController _lastnameController = TextEditingController();
   final TextEditingController _codeController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
   final FocusNode _codeFocus = FocusNode();
   final FocusNode _usernameFocus = FocusNode();
   final FocusNode _passwordFocus = FocusNode();
+  final FocusNode _passwordCheckFocus = FocusNode();
+  final FocusNode _regNoFocus = FocusNode();
+  final FocusNode _firstnameFocus = FocusNode();
+  final FocusNode _lastnameFocus = FocusNode();
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _usernameController.dispose();
     _passwordController.dispose();
+    _passwordCheckController.dispose();
+    _regNoController.dispose();
+    _firstnameFocus.dispose();
+    _lastnameFocus.dispose();
     _codeController.dispose();
     _codeFocus.dispose();
     _usernameFocus.dispose();
     _passwordFocus.dispose();
+    _passwordCheckFocus.dispose();
     _scrollController.dispose();
+    _passwordController.removeListener(_updatePasswordRules);
+    _passwordCheckController.removeListener(_updatePasswordRules);
     super.dispose();
   }
 
@@ -46,6 +62,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
   Map<String, String>? _selectedRole;
   // String _selectedRole = '';
   bool _isPasswordVisible = false;
+  bool _isPasswordCheckVisible = false;
   int _selectedToggleIndex = 0; //0-Иргэн, 1-103
   double _dragPosition = 0.0;
 
@@ -53,6 +70,17 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
 
   List<Map<String, String>> _serverNames = [];
   Map<String, dynamic> sharedPreferencesData = {};
+
+  Map<String, bool> _passwordRulesStatus = {};
+  String? _passwordCheckValidationError;
+  String? _regNoValidationError;
+  String? _firstnameValidationError;
+  String? _lastnameValidationError;
+
+  final RegExp _regNoRegex = RegExp(
+    r'^[А-ЯӨҮ]{2}[0-9]{2}(0[1-9]|1[0-2]|2[0-9]|3[0-2])(0[1-9]|[12][0-9]|3[01])[0-9]{2}$',
+  );
+  final RegExp mongolianCyrillicRegex = RegExp(r'^[А-Яа-яӨөҮүЁё]+$');
 
   @override
   void didChangeMetrics() {
@@ -64,6 +92,10 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
         _isKeyboardVisible = newValue;
       });
     }
+  }
+
+  bool isMongolianCyrillic(String text) {
+    return mongolianCyrillicRegex.hasMatch(text);
   }
 
   // static const platform = MethodChannel(
@@ -131,19 +163,99 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
     }
   }
 
+  void _updatePasswordRules() {
+    final password = _passwordController.text;
+    final rules = _validatePasswordRules(password);
+
+    setState(() {
+      _passwordRulesStatus = rules;
+      _passwordCheckValidationError = _validatePasswordMatch(
+        password,
+        _passwordCheckController.text,
+      );
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+
+    _passwordController.addListener(_updatePasswordRules);
+    _passwordCheckController.addListener(_updatePasswordRules);
+    _regNoController.addListener(_validateRegNo); // Add this line
+
     _dragPosition =
         _selectedToggleIndex *
-        // ignore: deprecated_member_use
         ((MediaQueryData.fromView(WidgetsBinding.instance.window).size.width -
                 32 -
                 8) /
             2);
     _fetchServerData();
     _getInitialScreenString();
+  }
+
+  void _validateRegNo() {
+    final regNo = _regNoController.text.trim().toUpperCase();
+
+    setState(() {
+      if (regNo.isEmpty) {
+        _regNoValidationError = null;
+      } else if (!_regNoRegex.hasMatch(regNo)) {
+        _regNoValidationError = 'Регистрын дугаар буруу байна';
+      } else {
+        _regNoValidationError = null;
+      }
+    });
+  }
+
+  void _validateName() {
+    final firstname = _firstnameController.text.trim().toUpperCase();
+    final lastname = _lastnameController.text.trim().toUpperCase();
+
+    setState(() {
+      if (firstname.isEmpty) {
+        _firstnameValidationError = null;
+      } else if (!mongolianCyrillicRegex.hasMatch(firstname)) {
+        _firstnameValidationError = 'Кирилл үсгээр бичнэ үү.';
+      } else {
+        _firstnameValidationError = null;
+      }
+
+      if (lastname.isEmpty) {
+        _lastnameValidationError = null;
+      } else if (!mongolianCyrillicRegex.hasMatch(lastname)) {
+        _lastnameValidationError = 'Кирилл буруу байна';
+      } else {
+        _lastnameValidationError = null;
+      }
+    });
+  }
+
+  bool _validateRegisterInputs() {
+    final password = _passwordController.text;
+    final passwordMatchError = _validatePasswordMatch(
+      password,
+      _passwordCheckController.text,
+    );
+    final rules = _validatePasswordRules(password);
+
+    final regNo = _regNoController.text.trim().toUpperCase();
+    if (regNo.isEmpty || !_regNoRegex.hasMatch(regNo)) {
+      _regNoValidationError = 'Регистрын дугаар буруу байна';
+    } else {
+      _regNoValidationError = null;
+    }
+
+    setState(() {
+      _passwordRulesStatus = rules;
+      _passwordCheckValidationError = passwordMatchError;
+    });
+
+    final allPassed = rules.values.every((passed) => passed == true);
+    return allPassed &&
+        passwordMatchError == null &&
+        _regNoValidationError == null;
   }
 
   Future<void> _login() async {
@@ -162,6 +274,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
     final body = {
       'username': _usernameController.text,
       'password': _passwordController.text,
+      'passwordCheck': _passwordController.text,
     };
 
     final headers = {
@@ -246,10 +359,38 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
     });
   }
 
+  Map<String, bool> _validatePasswordRules(String password) {
+    return {
+      'Нууц үгэнд дор хаяж нэг тоо байх ёстой': password.contains(
+        RegExp(r'\d'),
+      ),
+      'Нууц үгэнд дор хаяж нэг жижиг үсэг байх ёстой': password.contains(
+        RegExp(r'[a-z]'),
+      ),
+      'Нууц үгэнд дор хаяж нэг том үсэг байх ёстой': password.contains(
+        RegExp(r'[A-Z]'),
+      ),
+      'Нууц үгэнд дор хаяж нэг тусгай тэмдэгт байх ёстой': password.contains(
+        RegExp(r"[!@#&()\[\]{}:;',?/*~$^+=<>]"),
+      ),
+      'Нууц үгийн урт 10-35 тэмдэгт байх ёстой':
+          password.length >= 10 && password.length <= 35,
+    };
+  }
+
+  String? _validatePasswordMatch(String password, String confirmPassword) {
+    if (password != confirmPassword) {
+      return 'Нууц үг таарахгүй байна';
+    }
+    return null;
+  }
+
   Widget buildAnimatedToggle() {
     List<Map<String, String>> toggleOptions = [
-      {'label': 'Иргэн', 'icon': 'assets/icon/userWithPhone.png'},
-      {'label': '103', 'icon': 'assets/icon/ambulanceCar.png'},
+      // {'label': 'Нэвтрэх', 'icon': 'assets/icon/userWithPhone.png'},
+      // {'label': 'Бүртгүүлэх', 'icon': 'assets/icon/ambulanceCar.png'},
+      {'label': 'Нэвтрэх'},
+      {'label': 'Бүртгүүлэх'},
     ];
 
     double totalWidth = MediaQuery.of(context).size.width - 32;
@@ -306,8 +447,10 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                 decoration: BoxDecoration(
                   color:
                       _selectedToggleIndex == 0
-                          ? const Color(0xFF1E88E5)
-                          : const Color(0xFFE53935),
+                          // ? const Color(0xFF1E88E5)
+                          // : const Color(0xFFE53935),
+                          ? const Color(0xFF009688)
+                          : const Color(0xFF0077b3),
                   borderRadius: BorderRadius.circular(25),
                 ),
               ),
@@ -323,12 +466,17 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Image.asset(
-                          option['icon']!,
-                          width: 24,
-                          height: 24,
+                        Icon(
+                          index == 0 ? Icons.login : Icons.person_add,
                           color: isSelected ? Colors.white : Colors.black87,
+                          size: 24,
                         ),
+                        // Image.asset(
+                        //   option['icon']!,
+                        //   width: 24,
+                        //   height: 24,
+                        //   color: isSelected ? Colors.white : Colors.black87,
+                        // ),
                         const SizedBox(width: 8),
                         Text(
                           option['label']!,
@@ -367,6 +515,11 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
             focusNode: _passwordFocus,
             displayArrows: true,
             onTapAction: () => _scrollIntoView(_passwordFocus),
+          ),
+          KeyboardActionsItem(
+            focusNode: _passwordCheckFocus,
+            displayArrows: true,
+            onTapAction: () => _scrollIntoView(_passwordCheckFocus),
           ),
         ],
       ],
@@ -409,7 +562,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
       padding: EdgeInsets.only(
         left: 16,
         right: 16,
-        top: 70,
+        top: 20,
         bottom: MediaQuery.of(context).viewInsets.bottom + 32,
       ),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -551,7 +704,148 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
+                  // errorText: _passwordRulesStatus,
                 ),
+              ),
+
+            if (_selectedToggleIndex == 1 &&
+                _passwordController.text.isNotEmpty &&
+                _passwordRulesStatus.isNotEmpty)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children:
+                    _passwordRulesStatus.entries.map((entry) {
+                      return Row(
+                        children: [
+                          Icon(
+                            entry.value ? Icons.check_circle : Icons.cancel,
+                            color: entry.value ? Colors.green : Colors.red,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              entry.key,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: entry.value ? Colors.green : Colors.red,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }).toList(),
+              ),
+
+            if (_selectedToggleIndex == 1) const SizedBox(height: 20),
+            if (_selectedToggleIndex == 1)
+              TextFormField(
+                controller: _passwordCheckController,
+                focusNode: _passwordCheckFocus,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) {
+                  _login();
+                  FocusScope.of(context).unfocus();
+                },
+                obscureText: !_isPasswordCheckVisible,
+                decoration: InputDecoration(
+                  labelText: 'Нууц үг давтах',
+                  prefixIcon: const Icon(Icons.lock),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _isPasswordCheckVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isPasswordCheckVisible = !_isPasswordCheckVisible;
+                      });
+                    },
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  errorText: _passwordCheckValidationError,
+                ),
+              ),
+
+            if (_selectedToggleIndex == 1) const SizedBox(height: 20),
+
+            if (_selectedToggleIndex == 1)
+              TextFormField(
+                controller: _regNoController,
+                focusNode: _regNoFocus,
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: (_) {
+                  FocusScope.of(context).requestFocus(_passwordFocus);
+                },
+                decoration: InputDecoration(
+                  labelText: 'Регистрын дугаар',
+                  prefixIcon: const Icon(Icons.badge),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  errorText: _regNoValidationError,
+                ),
+                onChanged: (value) {
+                  _regNoController.value = _regNoController.value.copyWith(
+                    text: value.toUpperCase(),
+                    selection: TextSelection.collapsed(offset: value.length),
+                  );
+                },
+              ),
+
+            if (_selectedToggleIndex == 1) const SizedBox(height: 20),
+
+            if (_selectedToggleIndex == 1)
+              TextFormField(
+                controller: _lastnameController,
+                focusNode: _lastnameFocus,
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: (_) {
+                  FocusScope.of(context).requestFocus(_passwordFocus);
+                },
+                decoration: InputDecoration(
+                  labelText: 'Овог',
+                  prefixIcon: const Icon(Icons.badge),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  errorText: _lastnameValidationError,
+                ),
+                onChanged: (value) {
+                  _lastnameController.value = _lastnameController.value.copyWith(
+                    text: value.toUpperCase(),
+                    selection: TextSelection.collapsed(offset: value.length),
+                  );
+                },
+              ),
+
+            if (_selectedToggleIndex == 1) const SizedBox(height: 20),
+
+            if (_selectedToggleIndex == 1)
+              TextFormField(
+                controller: _firstnameController,
+                focusNode: _firstnameFocus,
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: (_) {
+                  FocusScope.of(context).requestFocus(_passwordFocus);
+                },
+                decoration: InputDecoration(
+                  labelText: 'Нэр',
+                  prefixIcon: const Icon(Icons.badge),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  errorText: _firstnameValidationError,
+                ),
+                onChanged: (value) {
+                  _firstnameController.value = _firstnameController.value.copyWith(
+                    text: value.toUpperCase(),
+                    selection: TextSelection.collapsed(offset: value.length),
+                  );
+                },
               ),
 
             if (_selectedToggleIndex == 1) const SizedBox(height: 20),
@@ -612,14 +906,28 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
 
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF009688),
+                backgroundColor:
+                    _selectedToggleIndex == 0
+                        ? const Color(0xFF009688)
+                        : const Color(0xFF0077b3),
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
                 minimumSize: const Size(double.infinity, 40),
               ),
-              onPressed: _isLoading ? null : _login,
+              onPressed:
+                  _isLoading
+                      ? null
+                      : () {
+                        if (_selectedToggleIndex == 1) {
+                          if (_validateRegisterInputs()) {
+                            _login();
+                          }
+                        } else {
+                          _login();
+                        }
+                      },
               child:
                   _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
