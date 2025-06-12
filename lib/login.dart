@@ -19,6 +19,10 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
+  final TextEditingController _usernameLoginController =
+      TextEditingController();
+  final TextEditingController _passwordLoginController =
+      TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _passwordCheckController =
@@ -30,6 +34,8 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
 
   final FocusNode _codeFocus = FocusNode();
+  final FocusNode _usernameLoginFocus = FocusNode();
+  final FocusNode _passwordLoginFocus = FocusNode();
   final FocusNode _usernameFocus = FocusNode();
   final FocusNode _passwordFocus = FocusNode();
   final FocusNode _passwordCheckFocus = FocusNode();
@@ -40,6 +46,8 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _usernameLoginController.dispose();
+    _passwordLoginController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
     _passwordCheckController.dispose();
@@ -49,6 +57,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
     _codeController.dispose();
     _codeFocus.dispose();
     _usernameFocus.dispose();
+    _passwordLoginFocus.dispose();
     _passwordFocus.dispose();
     _passwordCheckFocus.dispose();
     _scrollController.dispose();
@@ -61,6 +70,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
   String _errorMessage = '';
   Map<String, String>? _selectedRole;
   // String _selectedRole = '';
+  bool _isPasswordLoginVisible = false;
   bool _isPasswordVisible = false;
   bool _isPasswordCheckVisible = false;
   int _selectedToggleIndex = 0; //0-Иргэн, 1-103
@@ -504,7 +514,17 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
       keyboardBarColor: Colors.grey[200],
       actions: [
         if (_selectedToggleIndex == 0)
-          KeyboardActionsItem(focusNode: _codeFocus),
+          // KeyboardActionsItem(focusNode: _codeFocus),
+          KeyboardActionsItem(
+            focusNode: _usernameLoginFocus,
+            displayArrows: true,
+            onTapAction: () => _scrollIntoView(_usernameLoginFocus),
+          ),
+        KeyboardActionsItem(
+          focusNode: _passwordLoginFocus,
+          displayArrows: true,
+          onTapAction: () => _scrollIntoView(_passwordLoginFocus),
+        ),
         if (_selectedToggleIndex == 1) ...[
           KeyboardActionsItem(
             focusNode: _usernameFocus,
@@ -520,6 +540,21 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
             focusNode: _passwordCheckFocus,
             displayArrows: true,
             onTapAction: () => _scrollIntoView(_passwordCheckFocus),
+          ),
+          KeyboardActionsItem(
+            focusNode: _regNoFocus,
+            displayArrows: true,
+            onTapAction: () => _scrollIntoView(_regNoFocus),
+          ),
+          KeyboardActionsItem(
+            focusNode: _lastnameFocus,
+            displayArrows: true,
+            onTapAction: () => _scrollIntoView(_lastnameFocus),
+          ),
+          KeyboardActionsItem(
+            focusNode: _firstnameFocus,
+            displayArrows: true,
+            onTapAction: () => _scrollIntoView(_firstnameFocus),
           ),
         ],
       ],
@@ -545,12 +580,13 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
         onTap: () => FocusScope.of(context).unfocus(),
         child: SafeArea(
           child:
-              _selectedToggleIndex == 1
-                  ? KeyboardActions(
-                    config: _buildKeyboardActionsConfig(context),
-                    child: _buildLoginForm(),
-                  )
-                  : _buildLoginForm(),
+          // _selectedToggleIndex == 1
+          //     ?
+          KeyboardActions(
+            config: _buildKeyboardActionsConfig(context),
+            child: _buildLoginForm(),
+          ),
+          // : _buildLoginForm(),
         ),
       ),
     );
@@ -584,25 +620,24 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
             buildAnimatedToggle(),
             const SizedBox(height: 20),
 
-            if (_selectedToggleIndex == 0)
-              TextFormField(
-                controller: _codeController,
-                focusNode: _codeFocus,
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) => FocusScope.of(context).unfocus(),
-                keyboardType: TextInputType.text,
-                decoration: InputDecoration(
-                  labelText: 'Нэг удаагын код',
-                  prefixIcon: const Icon(Icons.vpn_key),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
+            // if (_selectedToggleIndex == 0)
+            //   TextFormField(
+            //     controller: _codeController,
+            //     focusNode: _codeFocus,
+            //     textInputAction: TextInputAction.done,
+            //     onFieldSubmitted: (_) => FocusScope.of(context).unfocus(),
+            //     keyboardType: TextInputType.text,
+            //     decoration: InputDecoration(
+            //       labelText: 'Нэг удаагын код',
+            //       prefixIcon: const Icon(Icons.vpn_key),
+            //       border: OutlineInputBorder(
+            //         borderRadius: BorderRadius.circular(12),
+            //       ),
+            //     ),
+            //   ),
 
-            if (_selectedToggleIndex == 0) const SizedBox(height: 20),
-
-            if (_serverNames.isNotEmpty && _selectedToggleIndex == 1)
+            // if (_selectedToggleIndex == 0) const SizedBox(height: 20),
+            if (_serverNames.isNotEmpty && _selectedToggleIndex == 0)
               Container(
                 height: 56,
                 padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -654,16 +689,16 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                 ),
               ),
 
-            if (_serverNames.isNotEmpty && _selectedToggleIndex == 1)
+            if (_serverNames.isNotEmpty && _selectedToggleIndex == 0)
               const SizedBox(height: 20),
 
-            if (_selectedToggleIndex == 1)
+            if (_selectedToggleIndex == 0)
               TextFormField(
-                controller: _usernameController,
-                focusNode: _usernameFocus,
+                controller: _usernameLoginController,
+                focusNode: _usernameLoginFocus,
                 textInputAction: TextInputAction.next,
                 onFieldSubmitted: (_) {
-                  FocusScope.of(context).requestFocus(_passwordFocus);
+                  FocusScope.of(context).requestFocus(_usernameLoginFocus);
                 },
                 decoration: InputDecoration(
                   labelText: 'Нэвтрэх нэр',
@@ -674,7 +709,58 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                 ),
               ),
 
-            if (_selectedToggleIndex == 1) const SizedBox(height: 20),
+            if (_selectedToggleIndex == 1)
+              TextFormField(
+                controller: _usernameController,
+                focusNode: _usernameFocus,
+                textInputAction: TextInputAction.next,
+                onFieldSubmitted: (_) {
+                  FocusScope.of(context).requestFocus(_usernameFocus);
+                },
+                decoration: InputDecoration(
+                  labelText: 'Нэвтрэх нэр',
+                  prefixIcon: const Icon(Icons.person),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+
+            const SizedBox(height: 20),
+
+            if (_selectedToggleIndex == 0)
+              TextFormField(
+                controller: _passwordLoginController,
+                focusNode: _passwordLoginFocus,
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) {
+                  _login();
+                  FocusScope.of(context).unfocus();
+                },
+                obscureText: !_isPasswordLoginVisible,
+                decoration: InputDecoration(
+                  labelText: 'Нууц үг',
+                  prefixIcon: const Icon(Icons.lock),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _isPasswordLoginVisible
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isPasswordLoginVisible = !_isPasswordLoginVisible;
+                      });
+                    },
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  // errorText: _passwordRulesStatus,
+                ),
+              ),
+
+            if (_selectedToggleIndex == 0) const SizedBox(height: 20),
 
             if (_selectedToggleIndex == 1)
               TextFormField(
@@ -815,7 +901,8 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                   errorText: _lastnameValidationError,
                 ),
                 onChanged: (value) {
-                  _lastnameController.value = _lastnameController.value.copyWith(
+                  _lastnameController
+                      .value = _lastnameController.value.copyWith(
                     text: value.toUpperCase(),
                     selection: TextSelection.collapsed(offset: value.length),
                   );
@@ -841,7 +928,8 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                   errorText: _firstnameValidationError,
                 ),
                 onChanged: (value) {
-                  _firstnameController.value = _firstnameController.value.copyWith(
+                  _firstnameController
+                      .value = _firstnameController.value.copyWith(
                     text: value.toUpperCase(),
                     selection: TextSelection.collapsed(offset: value.length),
                   );
