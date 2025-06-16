@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_app_badger/flutter_app_badger.dart';
@@ -268,6 +269,73 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
         _regNoValidationError == null;
   }
 
+  Future<void> _register() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final body = {
+      'username': _usernameController.text,
+      'password': _passwordController.text,
+      'passwordConfirm': _passwordCheckController.text,
+      'regNo': _regNoController.text,
+      'firstname': _firstnameController.text,
+      'lastname': _lastnameController.text,
+      'type': 'driver',
+    };
+
+    final headers = {'Content-Type': 'application/json'};
+
+    debugPrint('Request Headers: $headers');
+    debugPrint('Request Body: ${json.encode(body)}');
+
+    try {
+      final response = await http.post(
+        Uri.parse('https://app.medsoft.care/api/auth/signup'),
+        headers: headers,
+        body: json.encode(body),
+      );
+
+      debugPrint('Register response Status: ${response.statusCode}');
+      debugPrint('Register response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        if (data['success'] == true) {
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+
+          await prefs.setBool('isLoggedIn', false);
+          await prefs.remove('X-Server');
+          await prefs.remove('X-Medsoft-Token');
+          await prefs.remove('Username');
+
+          setState(() {
+            _selectedToggleIndex = 0;
+            _dragPosition = 0.0;
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _errorMessage = 'Register failed: ${data['message']}';
+            _isLoading = false;
+          });
+        }
+      } else {
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('isLoggedIn', false);
+        setState(() {
+          _errorMessage = 'Error register. Please try again.';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Exception: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
   Future<void> _login() async {
     setState(() {
       _isLoading = true;
@@ -281,24 +349,38 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
       return;
     }
 
-    final body = {
-      'username': _usernameController.text,
-      'password': _passwordController.text,
-      'passwordCheck': _passwordController.text,
-    };
+    final body =
+        _selectedRole?['name'] == 'Иргэн'
+            ? {
+              'username': _usernameLoginController.text,
+              'password': _passwordLoginController.text,
+              'type': 'driver',
+            }
+            : {
+              'username': _usernameController.text,
+              'password': _passwordController.text,
+              'passwordCheck': _passwordController.text,
+            };
 
-    final headers = {
-      'X-Token': Constants.xToken,
-      'X-Server': _selectedRole?['name'] ?? '',
-      'Content-Type': 'application/json',
-    };
+    final headers =
+        _selectedRole?['name'] == 'Иргэн'
+            ? {'Content-Type': 'application/json'}
+            : {
+              'X-Token': Constants.xToken,
+              'X-Server': _selectedRole?['name'] ?? '',
+              'Content-Type': 'application/json',
+            };
 
     debugPrint('Request Headers: $headers');
     debugPrint('Request Body: ${json.encode(body)}');
 
     try {
       final response = await http.post(
-        Uri.parse('https://runner-api-v2.medsoft.care/api/gateway/auth'),
+        Uri.parse(
+          _selectedRole?['name'] == 'Иргэн'
+              ? 'https://app.medsoft.care/api/auth/login'
+              : 'https://runner-api-v2.medsoft.care/api/gateway/auth',
+        ),
         headers: headers,
         body: json.encode(body),
       );
@@ -307,7 +389,11 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
       debugPrint('Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
-        FlutterAppBadger.removeBadge();
+        if (!(Platform.environment['SIMULATOR_DEVICE_NAME'] ==
+            'iPhone SE (3rd generation)')) {
+          FlutterAppBadger.removeBadge();
+        } else {}
+
         final Map<String, dynamic> data = json.decode(response.body);
         if (data['success'] == true) {
           SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -321,6 +407,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
 
           _loadSharedPreferencesData();
 
+            _isLoading = false;
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -734,7 +821,6 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                 focusNode: _passwordLoginFocus,
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) {
-                  _login();
                   FocusScope.of(context).unfocus();
                 },
                 obscureText: !_isPasswordLoginVisible,
@@ -768,7 +854,6 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                 focusNode: _passwordFocus,
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) {
-                  _login();
                   FocusScope.of(context).unfocus();
                 },
                 obscureText: !_isPasswordVisible,
@@ -830,7 +915,6 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                 focusNode: _passwordCheckFocus,
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) {
-                  _login();
                   FocusScope.of(context).unfocus();
                 },
                 obscureText: !_isPasswordCheckVisible,
@@ -903,7 +987,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                 onChanged: (value) {
                   _lastnameController
                       .value = _lastnameController.value.copyWith(
-                    text: value.toUpperCase(),
+                    text: value,
                     selection: TextSelection.collapsed(offset: value.length),
                   );
                 },
@@ -930,7 +1014,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                 onChanged: (value) {
                   _firstnameController
                       .value = _firstnameController.value.copyWith(
-                    text: value.toUpperCase(),
+                    text: value,
                     selection: TextSelection.collapsed(offset: value.length),
                   );
                 },
@@ -1010,7 +1094,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                       : () {
                         if (_selectedToggleIndex == 1) {
                           if (_validateRegisterInputs()) {
-                            _login();
+                            _register();
                           }
                         } else {
                           _login();
@@ -1019,9 +1103,12 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
               child:
                   _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                        'НЭВТРЭХ',
-                        style: TextStyle(fontSize: 15, color: Colors.white),
+                      : Text(
+                        _selectedToggleIndex == 0 ? 'НЭВТРЭХ' : 'БҮРТГҮҮЛЭХ',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: Colors.white,
+                        ),
                       ),
             ),
           ],
