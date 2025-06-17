@@ -7,10 +7,9 @@ import 'package:flutter_app_badger/flutter_app_badger.dart';
 import 'package:http/http.dart' as http;
 import 'package:keyboard_actions/keyboard_actions.dart';
 import 'package:new_project_location/constants.dart';
+import 'package:new_project_location/patient_list.dart';
 import 'package:new_project_location/webview_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import 'main.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -407,14 +406,18 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
 
           _loadSharedPreferencesData();
 
-            _isLoading = false;
+          _isLoading = false;
+          // Navigator.pushReplacement(
+          //   context,
+          //   MaterialPageRoute(
+          //     builder: (context) {
+          //       return const MyHomePage(title: 'Байршил тогтоогч');
+          //     },
+          //   ),
+          // );
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
-              builder: (context) {
-                return const MyHomePage(title: 'Байршил тогтоогч');
-              },
-            ),
+            MaterialPageRoute(builder: (context) => PatientListScreen()),
           );
         } else {
           setState(() {
