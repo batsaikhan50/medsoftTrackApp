@@ -1,5 +1,5 @@
 # Uncomment this line to define a global platform for your project
-# platform :ios, '12.0'
+platform :ios, '14.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -44,18 +44,17 @@ end
 
 # post_install do |installer|
 #   installer.pods_project.targets.each do |target|
-#     target.build_configurations.each do |config|
-#       # Universal fix to avoid arch conflicts on simulator
-#       config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+#     if target.name == 'flutter_app_badger'
+#       target.build_configurations.each do |config|
+#         # Exclude 'arm64' for iOS Simulator only for this plugin
+#         config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'arm64'
+#       end
 #     end
 
-#     # Specifically remove flutter_app_badger on simulator
-#     if target.name == 'flutter_app_badger'
-#       puts "Excluding flutter_app_badger from simulator build"
-#       target.build_configurations.each do |config|
-#         config.build_settings['ENABLE_BITCODE'] = 'NO'
-#         config.build_settings['EXCLUDED_ARCHS'] = 'arm64'
-#       end
+#     # Fix for all targets (especially for M1/M2 Mac compatibility)
+#     target.build_configurations.each do |config|
+#       config.build_settings['ONLY_ACTIVE_ARCH'] = 'YES'
 #     end
 #   end
 # end
+
