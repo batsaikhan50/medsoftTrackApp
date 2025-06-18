@@ -358,7 +358,6 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
             : {
               'username': _usernameController.text,
               'password': _passwordController.text,
-              'passwordCheck': _passwordController.text,
             };
 
     final headers =
