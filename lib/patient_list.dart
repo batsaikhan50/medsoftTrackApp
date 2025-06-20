@@ -1,250 +1,229 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'package:new_project_location/login.dart';
+import 'package:new_project_location/webview_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class PatientListScreen extends StatelessWidget {
-  PatientListScreen({super.key});
+import '../constants.dart'; // Adjust the path as needed
 
-  String testResponse = '''
-{
-  "success": true,
-  "data": [
-    {
-      "_id": "684a7eeba21b50928c458fd3",
-      "roomId": "d3a4e519-3b8b-49a5-a593-eaac5f9627f4",
-      "patientPhone": "99118822",
-      "serverName": "ui.medsoft.care",
-      "serverFullName": "UI medsoft hospital agency",
-      "sentToPatient": false,
-      "createdAt": "2025-06-13T11:23:41.312Z",
-      "__v": 0,
-      "url": "https://app-ui.medsoft.care/d3a4e519-3b8b-49a5-a593-eaac5f9627f4/app",
-      "patientSent": false
-    },
-    {
-      "_id": "684a7eeba21b50928c458fd4",
-      "roomId": "b1cbd2ea-dfa1-41c6-bb95-fc12f409964a",
-      "patientPhone": "88557766",
-      "serverName": "ui.medsoft.care",
-      "serverFullName": "UI medsoft hospital agency",
-      "sentToPatient": true,
-      "createdAt": "2025-06-14T08:44:11.210Z",
-      "__v": 0,
-      "url": "https://app-ui.medsoft.care/b1cbd2ea-dfa1-41c6-bb95-fc12f409964a/app",
-      "patientSent": true
-    },
-    {
-      "_id": "684a7eeba21b50928c458fd5",
-      "roomId": "9a7e8fb0-42fc-466c-9262-39d1f210c6f1",
-      "patientPhone": "88224455",
-      "serverName": "ui.medsoft.care",
-      "serverFullName": "UI medsoft hospital agency",
-      "sentToPatient": false,
-      "createdAt": "2025-06-13T06:20:19.818Z",
-      "__v": 0,
-      "url": "https://app-ui.medsoft.care/9a7e8fb0-42fc-466c-9262-39d1f210c6f1/app",
-      "patientSent": false
-    },
-    {
-      "_id": "684a7eeba21b50928c458fd6",
-      "roomId": "cd68abf5-6a26-4d9c-87d2-352bf5c7727d",
-      "patientPhone": "99001122",
-      "serverName": "ui.medsoft.care",
-      "serverFullName": "UI medsoft hospital agency",
-      "sentToPatient": true,
-      "createdAt": "2025-06-12T14:52:33.105Z",
-      "__v": 0,
-      "url": "https://app-ui.medsoft.care/cd68abf5-6a26-4d9c-87d2-352bf5c7727d/app",
-      "patientSent": true
-    },
-    {
-      "_id": "684a7eeba21b50928c458fd7",
-      "roomId": "fe509b2e-0402-4e94-8a2e-3cce9d041ef6",
-      "patientPhone": "88117733",
-      "serverName": "ui.medsoft.care",
-      "serverFullName": "UI medsoft hospital agency",
-      "sentToPatient": false,
-      "createdAt": "2025-06-15T09:11:45.999Z",
-      "__v": 0,
-      "url": "https://app-ui.medsoft.care/fe509b2e-0402-4e94-8a2e-3cce9d041ef6/app",
-      "patientSent": false
-    },
-    {
-      "_id": "684a7eeba21b50928c458fd8",
-      "roomId": "70b9fc02-0d6f-47ab-91b0-37bb7f278735",
-      "patientPhone": "88774411",
-      "serverName": "ui.medsoft.care",
-      "serverFullName": "UI medsoft hospital agency",
-      "sentToPatient": true,
-      "createdAt": "2025-06-13T17:09:27.100Z",
-      "__v": 0,
-      "url": "https://app-ui.medsoft.care/70b9fc02-0d6f-47ab-91b0-37bb7f278735/app",
-      "patientSent": true
-    },
-    {
-      "_id": "684a7eeba21b50928c458fd9",
-      "roomId": "a3e75c3d-d3a5-4dc9-9b55-6b6fdc5f7e76",
-      "patientPhone": "88009911",
-      "serverName": "ui.medsoft.care",
-      "serverFullName": "UI medsoft hospital agency",
-      "sentToPatient": false,
-      "createdAt": "2025-06-16T10:45:19.288Z",
-      "__v": 0,
-      "url": "https://app-ui.medsoft.care/a3e75c3d-d3a5-4dc9-9b55-6b6fdc5f7e76/app",
-      "patientSent": false
-    },
-    {
-      "_id": "684a7eeba21b50928c458fda",
-      "roomId": "241d3645-0c5e-41a2-a0f5-0b4c02a2098f",
-      "patientPhone": "88889900",
-      "serverName": "ui.medsoft.care",
-      "serverFullName": "UI medsoft hospital agency",
-      "sentToPatient": true,
-      "createdAt": "2025-06-15T06:31:48.454Z",
-      "__v": 0,
-      "url": "https://app-ui.medsoft.care/241d3645-0c5e-41a2-a0f5-0b4c02a2098f/app",
-      "patientSent": true
-    },
-    {
-      "_id": "684a7eeba21b50928c458fdb",
-      "roomId": "adcf6bcd-c2dc-4412-a08c-bd2d6477c830",
-      "patientPhone": "88112244",
-      "serverName": "ui.medsoft.care",
-      "serverFullName": "UI medsoft hospital agency",
-      "sentToPatient": true,
-      "createdAt": "2025-06-14T11:01:00.555Z",
-      "__v": 0,
-      "url": "https://app-ui.medsoft.care/adcf6bcd-c2dc-4412-a08c-bd2d6477c830/app",
-      "patientSent": true
-    },
-    {
-      "_id": "684a7eeba21b50928c458fdc",
-      "roomId": "3be58b55-7ac9-42f2-b12f-5b2cb314cc09",
-      "patientPhone": "88663322",
-      "serverName": "ui.medsoft.care",
-      "serverFullName": "UI medsoft hospital agency",
-      "sentToPatient": false,
-      "createdAt": "2025-06-14T18:22:59.786Z",
-      "__v": 0,
-      "url": "https://app-ui.medsoft.care/3be58b55-7ac9-42f2-b12f-5b2cb314cc09/app",
-      "patientSent": false
-    },
-    {
-      "_id": "684a7eeba21b50928c458fdd",
-      "roomId": "5f4a49d6-88b5-4dd5-a189-09c75a0ab51b",
-      "patientPhone": "88335577",
-      "serverName": "ui.medsoft.care",
-      "serverFullName": "UI medsoft hospital agency",
-      "sentToPatient": true,
-      "createdAt": "2025-06-16T13:35:14.310Z",
-      "__v": 0,
-      "url": "https://app-ui.medsoft.care/5f4a49d6-88b5-4dd5-a189-09c75a0ab51b/app",
-      "patientSent": true
-    },
-    {
-      "_id": "684a7eeba21b50928c458fde",
-      "roomId": "9cbb4a33-4f9e-4a8e-b6be-04a1446cf2c7",
-      "patientPhone": "88008800",
-      "serverName": "ui.medsoft.care",
-      "serverFullName": "UI medsoft hospital agency",
-      "sentToPatient": false,
-      "createdAt": "2025-06-13T16:03:23.789Z",
-      "__v": 0,
-      "url": "https://app-ui.medsoft.care/9cbb4a33-4f9e-4a8e-b6be-04a1446cf2c7/app",
-      "patientSent": false
-    },
-    {
-      "_id": "684a7eeba21b50928c458fdf",
-      "roomId": "cfa7bce2-5c77-49ab-a5a5-946d3bfb3185",
-      "patientPhone": "88770099",
-      "serverName": "ui.medsoft.care",
-      "serverFullName": "UI medsoft hospital agency",
-      "sentToPatient": true,
-      "createdAt": "2025-06-12T20:45:39.921Z",
-      "__v": 0,
-      "url": "https://app-ui.medsoft.care/cfa7bce2-5c77-49ab-a5a5-946d3bfb3185/app",
-      "patientSent": true
-    },
-    {
-      "_id": "684a7eeba21b50928c458fe0",
-      "roomId": "bd356f35-279c-4bc9-bc9c-899e67ef8394",
-      "patientPhone": "88443355",
-      "serverName": "ui.medsoft.care",
-      "serverFullName": "UI medsoft hospital agency",
-      "sentToPatient": false,
-      "createdAt": "2025-06-17T07:12:59.611Z",
-      "__v": 0,
-      "url": "https://app-ui.medsoft.care/bd356f35-279c-4bc9-bc9c-899e67ef8394/app",
-      "patientSent": false
-    },
-    {
-      "_id": "684a7eeba21b50928c458fe1",
-      "roomId": "2f4d12a6-e11b-4fc1-9fc1-d2d46c3b73f4",
-      "patientPhone": "88221166",
-      "serverName": "ui.medsoft.care",
-      "serverFullName": "UI medsoft hospital agency",
-      "sentToPatient": true,
-      "createdAt": "2025-06-15T22:51:45.000Z",
-      "__v": 0,
-      "url": "https://app-ui.medsoft.care/2f4d12a6-e11b-4fc1-9fc1-d2d46c3b73f4/app",
-      "patientSent": true
-    }
-  ]
+class PatientListScreen extends StatefulWidget {
+  const PatientListScreen({super.key});
+
+  @override
+  State<PatientListScreen> createState() => _PatientListScreenState();
 }
-''';
+
+class _PatientListScreenState extends State<PatientListScreen> {
+  List<dynamic> patients = [];
+  bool isLoading = true;
+  String? username;
+  Map<String, dynamic> sharedPreferencesData = {};
+
+  @override
+  void initState() {
+    super.initState();
+    fetchPatients();
+    _loadSharedPreferencesData();
+  }
+
+  static const platform = MethodChannel(
+    'com.example.new_project_location/location',
+  );
+
+  Future<void> fetchPatients() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('X-Medsoft-Token') ?? '';
+    final server = prefs.getString('X-Server') ?? '';
+
+    final uri = Uri.parse('https://app.medsoft.care/api/room/get/driver');
+
+    final response = await http.get(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'X-Medsoft-Token': token,
+        'X-Server': server,
+        'X-Token': Constants.xToken,
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      if (json['success'] == true) {
+        setState(() {
+          patients = json['data'];
+          isLoading = false;
+        });
+      }
+    } else {
+      // Handle error
+      setState(() => isLoading = false);
+      debugPrint('Failed to fetch patients: ${response.statusCode}');
+    }
+  }
+
+  void _logOut() async {
+    debugPrint("Entered _logOut");
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove('isLoggedIn');
+    await prefs.remove('X-Server');
+    await prefs.remove('X-Medsoft-Token');
+    await prefs.remove('Username');
+
+    try {
+      await platform.invokeMethod('stopLocationUpdates');
+    } on PlatformException catch (e) {
+      debugPrint("Failed to stop location updates: '${e.message}'.");
+    }
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => LoginScreen()),
+    );
+  }
+
+  Future<void> _loadSharedPreferencesData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    Map<String, dynamic> data = {};
+
+    Set<String> allKeys = prefs.getKeys();
+    for (String key in allKeys) {
+      if (key == 'isLoggedIn') {
+        data[key] = prefs.getBool(key);
+      } else {
+        data[key] = prefs.getString(key) ?? 'null';
+      }
+    }
+
+    setState(() {
+      username = prefs.getString('Username');
+      sharedPreferencesData = data;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final parsedJson = jsonDecode(testResponse);
-    final List<dynamic> dataList = parsedJson['data'];
-
     return Scaffold(
       appBar: AppBar(title: const Text('Patient List')),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(12.0),
-        itemCount: dataList.length,
-        itemBuilder: (context, index) {
-          final patient = dataList[index];
+      body:
+          isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : ListView.builder(
+                padding: const EdgeInsets.all(12.0),
+                itemCount: patients.length,
+                itemBuilder: (context, index) {
+                  final patient = patients[index];
+                  final patientPhone = patient['patientPhone'] ?? 'Unknown';
+                  final sentToPatient = patient['sentToPatient'] ?? false;
+                  final patientSent = patient['patientSent'] ?? false;
+                  final arrived = patient['arrived'] ?? false;
+                  final distance = patient['distance'];
+                  final duration = patient['duration'];
 
-          final patientPhone = patient['patientPhone'] ?? 'Unknown';
-          final sentToPatient = patient['sentToPatient'] ?? false;
-          final patientSent = patient['patientSent'] ?? false;
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 8.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 3,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  patientPhone,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              ElevatedButton(
+                                onPressed:
+                                    sentToPatient
+                                        ? null
+                                        : () {
+                                          // TODO: Implement Send SMS
+                                        },
+                                child: const Text("Send SMS"),
+                              ),
+                              const SizedBox(width: 8),
+                              ElevatedButton(
+                                onPressed:
+                                    patientSent
+                                        ? () async {
+                                          final url = patient['url'];
+                                          final title = "Patient Map";
+                                          final roomId = patient['roomId'];
 
-          return Card(
-            margin: const EdgeInsets.symmetric(vertical: 8.0),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            elevation: 3,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      patientPhone,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+                                          if (url != null &&
+                                              url.toString().startsWith(
+                                                'http',
+                                              )) {
+                                            try {
+                                              // Send roomId to native side before starting location manager
+                                              await platform.invokeMethod(
+                                                'sendRoomIdToAppDelegate',
+                                                {'roomId': roomId},
+                                              );
+
+                                              // Start location manager
+                                              await platform.invokeMethod(
+                                                'startLocationManagerAfterLogin',
+                                              );
+
+                                              // Then open the WebView
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder:
+                                                      (context) =>
+                                                          WebViewScreen(
+                                                            url: url,
+                                                            title: title,
+                                                          ),
+                                                ),
+                                              );
+                                            } on PlatformException catch (e) {
+                                              debugPrint(
+                                                "Failed to start location: $e",
+                                              );
+                                            }
+                                          } else {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              const SnackBar(
+                                                content: Text("Invalid URL"),
+                                              ),
+                                            );
+                                          }
+                                        }
+                                        : null,
+                                child: const Text("See Map"),
+                              ),
+                            ],
+                          ),
+                          if (arrived) ...[
+                            const SizedBox(height: 8),
+                            Text("Distance: ${distance ?? 'N/A'} km"),
+                            Text("Duration: ${duration ?? 'N/A'}"),
+                          ],
+                        ],
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: sentToPatient ? null : () {},
-                    child: const Text("Send SMS"),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: patientSent ? () {} : null,
-                    child: const Text("See Map"),
-                  ),
-                ],
+                  );
+                },
               ),
-            ),
-          );
-        },
-      ),
     );
   }
 }

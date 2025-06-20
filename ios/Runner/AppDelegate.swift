@@ -15,6 +15,7 @@ import UserNotifications
   var xMedsoftToken: String?
   var didRequestAlwaysPermission = false
   var lastAuthorizationStatus: CLAuthorizationStatus?
+  var currentRoomId: String?
 
   override func application(
     _ application: UIApplication,
@@ -59,6 +60,14 @@ import UserNotifications
         result(nil)
       } else if call.method == "stopLocationUpdates" {
         self?.stopLocationUpdates()
+        result(nil)
+      } else if call.method == "sendRoomIdToAppDelegate" {
+        if let args = call.arguments as? [String: Any],
+          let roomId = args["roomId"] as? String
+        {
+          self?.currentRoomId = roomId
+          print("Received roomId: \(roomId)")
+        }
         result(nil)
       } else {
         result(FlutterMethodNotImplemented)
@@ -330,6 +339,7 @@ import UserNotifications
     //   showLocationPermissionDialog()
     // }
   }
+  
 
   private func sendLocationToAPI(location: CLLocation) {
     guard let token = xToken else {
@@ -347,7 +357,14 @@ import UserNotifications
       return
     }
 
-    guard let url = URL(string: "https://runner-api-v2.medsoft.care/api/gateway/location") else {
+    guard let roomId = currentRoomId else {
+      NSLog("Error: roomId not available")
+      return
+    }
+
+    NSLog("Preparing to send location. RoomID: \(roomId), lat: \(location.coordinate.latitude), lng: \(location.coordinate.longitude)")
+
+    guard let url = URL(string: "https://app.medsoft.care/api/location/save/driver") else {
       NSLog("Invalid URL")
       return
     }
@@ -357,16 +374,28 @@ import UserNotifications
     request.addValue(token, forHTTPHeaderField: "X-Token")
     request.addValue(hospital, forHTTPHeaderField: "X-Server")
     request.addValue(medsoftToken, forHTTPHeaderField: "X-Medsoft-Token")
+    request.addValue("Bearer \(medsoftToken)", forHTTPHeaderField: "Authorization") 
     request.addValue("application/json", forHTTPHeaderField: "Content-Type")
 
+    if let allHeaders = request.allHTTPHeaderFields {
+      for (key, value) in allHeaders {
+        NSLog("Header: \(key) => \(value)")
+      }
+    }
+    
     let body: [String: Any] = [
       "lat": location.coordinate.latitude,
       "lng": location.coordinate.longitude,
+      "roomId": roomId,
     ]
 
     do {
       let jsonData = try JSONSerialization.data(withJSONObject: body, options: [])
       request.httpBody = jsonData
+
+      if let jsonStr = String(data: jsonData, encoding: .utf8) {
+        NSLog("Sending JSON body: \(jsonStr)") 
+      }
     } catch {
       NSLog("Error encoding JSON body: \(error)")
       return
@@ -381,18 +410,14 @@ import UserNotifications
       if let response = response as? HTTPURLResponse {
         NSLog("Response status code: \(response.statusCode)")
 
+        if let data = data, let responseString = String(data: data, encoding: .utf8) {
+          NSLog("Response body: \(responseString)") 
+        }
+
         if response.statusCode == 200 {
-          NSLog("Successfully sent location data.")
-        } else if response.statusCode == 401 || response.statusCode == 403
-          || response.statusCode == 400
-        {
-          DispatchQueue.main.async {
-            self.clearSharedPreferencesAndNavigateToLogin()
-          }
+          NSLog("Successfully sent location data for roomId \(roomId)")
         } else {
-          if let data = data, let responseString = String(data: data, encoding: .utf8) {
-            NSLog("Error response: \(responseString)")
-          }
+          NSLog("Failed to send location data for roomId \(roomId)")
         }
       }
     }

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:new_project_location/constants.dart';
 import 'package:new_project_location/guide.dart';
+import 'package:new_project_location/patient_list.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'login.dart';
@@ -105,7 +106,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     _loadSharedPreferencesData();
     _sendXServerToAppDelegate();
     _sendXMedsoftTokenToAppDelegate();
-    _startLocationTracking();
+    // _startLocationTracking();
 
     _animationController = AnimationController(
       vsync: this,
@@ -400,69 +401,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         ),
       ),
 
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              _liveLocation,
-              style: Theme.of(context).textTheme.bodyLarge,
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Байршлын түүх:',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            SizedBox(height: 10),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _locationHistory.length,
-                itemBuilder: (context, index) {
-                  return ListTile(title: Text(_locationHistory[index]));
-                },
-              ),
-            ),
-
-            SizedBox(height: 50),
-
-            AnimatedOpacity(
-              opacity: _isLocationSent ? 1.0 : 0.0,
-              duration: Duration(milliseconds: 500),
-              child: SlideTransition(
-                position: _slideAnimation,
-                child: Padding(
-                  padding: EdgeInsets.only(bottom: 20),
-                  child: Text(
-                    'Амжилттай',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.green,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Center(
-              child: ElevatedButton(
-                onPressed: _sendLocationByButton,
-                style: ElevatedButton.styleFrom(minimumSize: Size(200, 60)),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.near_me, size: 24, color: Colors.blueAccent),
-                    SizedBox(width: 8),
-                    Text('Байршил илгээх', style: TextStyle(fontSize: 18)),
-                  ],
-                ),
-              ),
-            ),
-
-            SizedBox(height: 170),
-          ],
-        ),
-      ),
+      body: PatientListScreen(),
     );
   }
 }

@@ -7,6 +7,7 @@ import 'package:flutter_app_badger/flutter_app_badger.dart';
 import 'package:http/http.dart' as http;
 import 'package:keyboard_actions/keyboard_actions.dart';
 import 'package:new_project_location/constants.dart';
+import 'package:new_project_location/main.dart';
 import 'package:new_project_location/patient_list.dart';
 import 'package:new_project_location/webview_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -349,7 +350,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
     }
 
     final body =
-        _selectedRole?['name'] == 'Иргэн'
+        _selectedRole?['name'] == 'Citizen'
             ? {
               'username': _usernameLoginController.text,
               'password': _passwordLoginController.text,
@@ -361,7 +362,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
             };
 
     final headers =
-        _selectedRole?['name'] == 'Иргэн'
+        _selectedRole?['name'] == 'Citizen'
             ? {'Content-Type': 'application/json'}
             : {
               'X-Token': Constants.xToken,
@@ -375,7 +376,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
     try {
       final response = await http.post(
         Uri.parse(
-          _selectedRole?['name'] == 'Иргэн'
+          _selectedRole?['name'] == 'Citizen'
               ? 'https://app.medsoft.care/api/auth/login'
               : 'https://runner-api-v2.medsoft.care/api/gateway/auth',
         ),
@@ -401,7 +402,9 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
 
           await prefs.setString('X-Server', _selectedRole?['name'] ?? '');
           await prefs.setString('X-Medsoft-Token', token);
-          await prefs.setString('Username', _usernameController.text);
+
+          debugPrint('Username controller: ${_usernameLoginController.text}');
+          await prefs.setString('Username', _usernameLoginController.text);
 
           _loadSharedPreferencesData();
 
@@ -416,7 +419,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
           // );
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => PatientListScreen()),
+            MaterialPageRoute(builder: (context) => MyHomePage(title: 'wtf title',)),
           );
         } else {
           setState(() {
