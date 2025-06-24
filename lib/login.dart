@@ -419,7 +419,9 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
           // );
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => MyHomePage(title: 'wtf title',)),
+            MaterialPageRoute(
+              builder: (context) => MyHomePage(title: 'Patient List'),
+            ),
           );
         } else {
           setState(() {

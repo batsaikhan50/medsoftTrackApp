@@ -7,7 +7,7 @@ import 'package:new_project_location/login.dart';
 import 'package:new_project_location/webview_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../constants.dart'; // Adjust the path as needed
+import '../constants.dart';
 
 class PatientListScreen extends StatefulWidget {
   const PatientListScreen({super.key});
@@ -108,7 +108,7 @@ class _PatientListScreenState extends State<PatientListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Patient List')),
+      appBar: AppBar(title: const Text('')),
       body:
           isLoading
               ? const Center(child: CircularProgressIndicator())
@@ -162,7 +162,7 @@ class _PatientListScreenState extends State<PatientListScreen> {
                                     patientSent
                                         ? () async {
                                           final url = patient['url'];
-                                          final title = "Patient Map";
+                                          final title = "Driver Map";
                                           final roomId = patient['roomId'];
 
                                           if (url != null &&
