@@ -61,7 +61,7 @@ class MyApp extends StatelessWidget {
     bool isGotUsername = username != null && username.isNotEmpty;
 
     if (isLoggedIn && isGotToken && isGotMedsoftToken && isGotUsername) {
-      return const MyHomePage(title: 'Байршил тогтоогч');
+      return const MyHomePage(title: 'Patient List');
     } else {
       return const LoginScreen();
     }
@@ -88,6 +88,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   static const platform = MethodChannel(
     'com.example.new_project_location/location',
   );
+
+  final GlobalKey<PatientListScreenState> _patientListKey =
+      GlobalKey<PatientListScreenState>();
 
   static const String xToken = Constants.xToken;
   Map<String, dynamic> sharedPreferencesData = {};
@@ -337,6 +340,14 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       appBar: AppBar(
         backgroundColor: Color(0xFF00CCCC),
         title: Text(widget.title),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              _patientListKey.currentState?.refreshPatients();
+            },
+          ),
+        ],
       ),
       drawer: Drawer(
         child: Column(
@@ -400,8 +411,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
           ],
         ),
       ),
-
-      body: PatientListScreen(),
+      body: PatientListScreen(key: _patientListKey),
     );
   }
 }

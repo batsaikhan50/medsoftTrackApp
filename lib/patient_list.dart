@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -10,23 +11,41 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../constants.dart';
 
 class PatientListScreen extends StatefulWidget {
-  const PatientListScreen({super.key});
+  const PatientListScreen({Key? key}) : super(key: key);
 
   @override
-  State<PatientListScreen> createState() => _PatientListScreenState();
+  State<PatientListScreen> createState() => PatientListScreenState();
 }
 
-class _PatientListScreenState extends State<PatientListScreen> {
+class PatientListScreenState extends State<PatientListScreen> {
   List<dynamic> patients = [];
   bool isLoading = true;
   String? username;
   Map<String, dynamic> sharedPreferencesData = {};
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
     fetchPatients();
     _loadSharedPreferencesData();
+
+    _refreshTimer = Timer.periodic(Duration(minutes: 1), (timer) {
+      refreshPatients();
+    });
+  }
+
+  void refreshPatients() {
+    setState(() {
+      isLoading = true;
+    });
+    fetchPatients();
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   static const platform = MethodChannel(
@@ -108,7 +127,6 @@ class _PatientListScreenState extends State<PatientListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('')),
       body:
           isLoading
               ? const Center(child: CircularProgressIndicator())
@@ -135,84 +153,208 @@ class _PatientListScreenState extends State<PatientListScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // First row: Phone number
+                          Text(
+                            patientPhone,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+
+                          // Second row: Buttons
                           Row(
                             children: [
                               Expanded(
-                                child: Text(
-                                  patientPhone,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    final roomId = patient['roomId'];
+                                    final phone = patient['patientPhone'];
+
+                                    if (roomId == null || phone == null) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Room ID эсвэл утасны дугаар олдсонгүй',
+                                          ),
+                                          duration: Duration(seconds: 1),
+                                        ),
+                                      );
+                                      return;
+                                    }
+
+                                    final prefs =
+                                        await SharedPreferences.getInstance();
+                                    final token =
+                                        prefs.getString('X-Medsoft-Token') ??
+                                        '';
+                                    final server =
+                                        prefs.getString('X-Server') ?? '';
+
+                                    final uri = Uri.parse(
+                                      'https://runner-api-v2.medsoft.care/api/gateway/general/get/api/inpatient/ambulance/sendToMedsoftApp?roomId=$roomId&patientPhone=$phone',
+                                    );
+
+                                    try {
+                                      final response = await http.get(
+                                        uri,
+                                        headers: {
+                                          'X-Medsoft-Token': token,
+                                          'X-Server': server == 'Citizen' ? 'ui.medsoft.care' : server,
+                                          'X-Token': Constants.xToken,
+                                        },
+                                      );
+
+                                      if (response.statusCode == 200) {
+                                        final json = jsonDecode(response.body);
+                                        if (json['success'] == true) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Мессеж амжилттай илгээгдлээ',
+                                              ),
+                                              backgroundColor: Colors.green,
+                                              duration: Duration(seconds: 1),
+                                            ),
+                                          );
+                                          refreshPatients();
+                                        } else {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                json['message'] ??
+                                                    'Алдаа гарлаа',
+                                              ),
+                                              backgroundColor: Colors.red,
+                                              duration: const Duration(
+                                                seconds: 1,
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      } else {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'HTTP алдаа: ${response.statusCode}',
+                                            ),
+                                            backgroundColor: Colors.red,
+                                            duration: const Duration(
+                                              seconds: 1,
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      debugPrint('Send SMS error: $e');
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Сүлжээний алдаа: $e'),
+                                          backgroundColor: Colors.red,
+                                          duration: const Duration(seconds: 1),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Text("Send SMS"),
+                                      if (sentToPatient) ...[
+                                        const SizedBox(width: 6),
+                                        const Icon(
+                                          Icons.check,
+                                          color: Colors.green,
+                                          size: 18,
+                                        ),
+                                      ],
+                                    ],
                                   ),
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              ElevatedButton(
-                                onPressed:
-                                    sentToPatient
-                                        ? null
-                                        : () {
-                                          // TODO: Implement Send SMS
-                                        },
-                                child: const Text("Send SMS"),
-                              ),
-                              const SizedBox(width: 8),
-                              ElevatedButton(
-                                onPressed:
-                                    patientSent
-                                        ? () async {
-                                          final url = patient['url'];
-                                          final title = "Driver Map";
-                                          final roomId = patient['roomId'];
-
-                                          if (url != null &&
-                                              url.toString().startsWith(
-                                                'http',
-                                              )) {
-                                            try {
-                                              // Send roomId to native side before starting location manager
-                                              await platform.invokeMethod(
-                                                'sendRoomIdToAppDelegate',
-                                                {'roomId': roomId},
-                                              );
-
-                                              // Start location manager
-                                              await platform.invokeMethod(
-                                                'startLocationManagerAfterLogin',
-                                              );
-
-                                              // Then open the WebView
-                                              Navigator.push(
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed:
+                                      patientSent
+                                          ? () async {
+                                            final url = patient['url'];
+                                            final title = "Driver Map";
+                                            final roomId = patient['roomId'];
+                                            final roomIdNum = patient['_id'];
+                                            if (url != null &&
+                                                url.toString().startsWith(
+                                                  'http',
+                                                )) {
+                                              try {
+                                                await platform.invokeMethod(
+                                                  'sendRoomIdToAppDelegate',
+                                                  {'roomId': roomId},
+                                                );
+                                                await platform.invokeMethod(
+                                                  'startLocationManagerAfterLogin',
+                                                );
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder:
+                                                        (context) =>
+                                                            WebViewScreen(
+                                                              url: url,
+                                                              title: title,
+                                                              roomId: roomId,
+                                                              roomIdNum:
+                                                                  roomIdNum,
+                                                            ),
+                                                  ),
+                                                );
+                                              } on PlatformException catch (e) {
+                                                debugPrint(
+                                                  "Failed to start location: $e",
+                                                );
+                                              }
+                                            } else {
+                                              ScaffoldMessenger.of(
                                                 context,
-                                                MaterialPageRoute(
-                                                  builder:
-                                                      (context) =>
-                                                          WebViewScreen(
-                                                            url: url,
-                                                            title: title,
-                                                          ),
+                                              ).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text("Invalid URL"),
                                                 ),
                                               );
-                                            } on PlatformException catch (e) {
-                                              debugPrint(
-                                                "Failed to start location: $e",
-                                              );
                                             }
-                                          } else {
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              const SnackBar(
-                                                content: Text("Invalid URL"),
-                                              ),
-                                            );
                                           }
-                                        }
-                                        : null,
-                                child: const Text("See Map"),
+                                          : null,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Text("See Map"),
+                                      if (arrived) ...[
+                                        const SizedBox(width: 6),
+                                        const Icon(
+                                          Icons.check,
+                                          color: Colors.green,
+                                          size: 18,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
                               ),
                             ],
                           ),
+
+                          // Optional: Distance and duration shown below if arrived
                           if (arrived) ...[
                             const SizedBox(height: 8),
                             Text("Distance: ${distance ?? 'N/A'} km"),

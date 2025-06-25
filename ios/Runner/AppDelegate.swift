@@ -339,7 +339,6 @@ import UserNotifications
     //   showLocationPermissionDialog()
     // }
   }
-  
 
   private func sendLocationToAPI(location: CLLocation) {
     guard let token = xToken else {
@@ -362,7 +361,9 @@ import UserNotifications
       return
     }
 
-    NSLog("Preparing to send location. RoomID: \(roomId), lat: \(location.coordinate.latitude), lng: \(location.coordinate.longitude)")
+    NSLog(
+      "Preparing to send location. RoomID: \(roomId), lat: \(location.coordinate.latitude), lng: \(location.coordinate.longitude)"
+    )
 
     guard let url = URL(string: "https://app.medsoft.care/api/location/save/driver") else {
       NSLog("Invalid URL")
@@ -374,7 +375,7 @@ import UserNotifications
     request.addValue(token, forHTTPHeaderField: "X-Token")
     request.addValue(hospital, forHTTPHeaderField: "X-Server")
     request.addValue(medsoftToken, forHTTPHeaderField: "X-Medsoft-Token")
-    request.addValue("Bearer \(medsoftToken)", forHTTPHeaderField: "Authorization") 
+    request.addValue("Bearer \(medsoftToken)", forHTTPHeaderField: "Authorization")
     request.addValue("application/json", forHTTPHeaderField: "Content-Type")
 
     if let allHeaders = request.allHTTPHeaderFields {
@@ -382,7 +383,7 @@ import UserNotifications
         NSLog("Header: \(key) => \(value)")
       }
     }
-    
+
     let body: [String: Any] = [
       "lat": location.coordinate.latitude,
       "lng": location.coordinate.longitude,
@@ -394,7 +395,7 @@ import UserNotifications
       request.httpBody = jsonData
 
       if let jsonStr = String(data: jsonData, encoding: .utf8) {
-        NSLog("Sending JSON body: \(jsonStr)") 
+        NSLog("Sending JSON body: \(jsonStr)")
       }
     } catch {
       NSLog("Error encoding JSON body: \(error)")
@@ -407,18 +408,41 @@ import UserNotifications
         return
       }
 
-      if let response = response as? HTTPURLResponse {
-        NSLog("Response status code: \(response.statusCode)")
+      guard let httpResponse = response as? HTTPURLResponse else {
+        NSLog("Invalid response")
+        return
+      }
 
-        if let data = data, let responseString = String(data: data, encoding: .utf8) {
-          NSLog("Response body: \(responseString)") 
+      NSLog("Response status code: \(httpResponse.statusCode)")
+
+      guard let data = data else {
+        NSLog("No data received")
+        return
+      }
+
+      do {
+        if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+          let arrivedData = json["data"] as? [String: Any],
+          let arrivedInFifty = arrivedData["arrivedInFifty"] as? Bool
+        {
+
+          UserDefaults.standard.set(arrivedInFifty, forKey: "arrivedInFifty")
+          NSLog("Saved arrivedInFifty = \(arrivedInFifty) to UserDefaults")
+
+          if arrivedInFifty {
+            DispatchQueue.main.async {
+              self.flutterChannel?.invokeMethod("arrivedInFiftyReached", arguments: nil)
+            }
+          }
         }
 
-        if response.statusCode == 200 {
+        if httpResponse.statusCode == 200 {
           NSLog("Successfully sent location data for roomId \(roomId)")
         } else {
           NSLog("Failed to send location data for roomId \(roomId)")
         }
+      } catch {
+        NSLog("Failed to parse JSON: \(error)")
       }
     }
     task.resume()
@@ -457,7 +481,6 @@ import UserNotifications
   }
 
   func stopLocationUpdates() {
-
     locationManager?.stopUpdatingLocation()
     locationManager?.delegate = nil
     NSLog("Location updates stopped.")
