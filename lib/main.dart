@@ -192,7 +192,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
     Set<String> allKeys = prefs.getKeys();
     for (String key in allKeys) {
-      if (key == 'isLoggedIn') {
+      if (key == 'isLoggedIn' || key == 'arrivedInFifty') {
         data[key] = prefs.getBool(key);
       } else {
         data[key] = prefs.getString(key) ?? 'null';

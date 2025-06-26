@@ -356,8 +356,8 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
               'type': 'driver',
             }
             : {
-              'username': _usernameController.text,
-              'password': _passwordController.text,
+              'username': _usernameLoginController.text,
+              'password': _passwordLoginController.text,
             };
 
     final headers =

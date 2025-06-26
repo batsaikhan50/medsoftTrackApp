@@ -57,8 +57,17 @@ class _WebViewScreenState extends State<WebViewScreen> {
     const platform = MethodChannel('com.example.new_project_location/location');
     platform.setMethodCallHandler((call) async {
       if (call.method == 'arrivedInFiftyReached') {
-        // You can show a dialog, notification, or navigate
-        debugPrint("arrivedInFiftyReached received in Dart");
+        final bool arrived = call.arguments?['arrivedInFifty'] ?? false;
+        debugPrint(
+          "arrivedInFiftyReached received in Dart: ${call.arguments?['arrivedInFifty']}",
+        );
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('arrivedInFifty', arrived);
+
+        setState(() {
+          arrivedInFifty = arrived;
+        });
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -67,14 +76,24 @@ class _WebViewScreenState extends State<WebViewScreen> {
             duration: Duration(seconds: 2),
           ),
         );
+      } else {
+        debugPrint("not arrivedInFiftyReached");
       }
     });
-
-    _loadArrivedInFiftyFlag();
   }
 
   Future<void> _loadArrivedInFiftyFlag() async {
     final prefs = await SharedPreferences.getInstance();
+
+    // Print all stored preferences
+    for (var key in prefs.getKeys()) {
+      debugPrint("SharedPreference - $key: ${prefs.get(key)}");
+    }
+
+    debugPrint(
+      "prefs.getBool('arrivedInFifty'): ${prefs.getBool('arrivedInFifty')}",
+    );
+
     setState(() {
       arrivedInFifty = prefs.getBool('arrivedInFifty') ?? false;
     });
@@ -235,36 +254,44 @@ class _WebViewScreenState extends State<WebViewScreen> {
           widget.title == 'Driver Map'
               ? Stack(
                 children: [
+                  // The WebView itself
                   WebViewWidget(controller: _controller),
+
+                  // Refresh button - top right
                   Positioned(
                     top: 16,
                     right: 16,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        _buildActionButton(
-                          icon: Icons.refresh,
-                          label: 'Refresh',
-                          onPressed: () {
-                            _controller.reload();
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        _buildActionButton(
-                          icon: Icons.send,
-                          label: 'Send Location',
-                          onPressed: _sendLocation,
-                        ),
-                        const SizedBox(height: 12),
-                        if (widget.roomIdNum != null && arrivedInFifty)
-                          _buildActionButton(
-                            icon: Icons.check_circle,
-                            label: 'Arrived',
-                            onPressed: () {
-                              _markArrived(widget.roomIdNum!);
-                            },
-                          ),
-                      ],
+                    child: _buildActionButton(
+                      icon: Icons.refresh,
+                      label: 'Refresh',
+                      onPressed: () {
+                        _controller.reload();
+                      },
+                    ),
+                  ),
+
+                  // Arrived button - now just below Refresh
+                  if (widget.roomIdNum != null && arrivedInFifty)
+                    Positioned(
+                      top: 72,
+                      right: 16,
+                      child: _buildActionButton(
+                        icon: Icons.check_circle,
+                        label: 'Arrived',
+                        onPressed: () {
+                          _markArrived(widget.roomIdNum!);
+                        },
+                      ),
+                    ),
+
+                  // Send Location button - bottom right but slightly to the left
+                  Positioned(
+                    bottom: 24,
+                    right: 90, // move a bit to the left from the right edge
+                    child: _buildActionButton(
+                      icon: Icons.send,
+                      label: 'Send Location',
+                      onPressed: _sendLocation,
                     ),
                   ),
                 ],

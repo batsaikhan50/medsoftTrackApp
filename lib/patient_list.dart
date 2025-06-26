@@ -111,7 +111,7 @@ class PatientListScreenState extends State<PatientListScreen> {
 
     Set<String> allKeys = prefs.getKeys();
     for (String key in allKeys) {
-      if (key == 'isLoggedIn') {
+      if (key == 'isLoggedIn' || key == 'arrivedInFifty') {
         data[key] = prefs.getBool(key);
       } else {
         data[key] = prefs.getString(key) ?? 'null';
@@ -170,6 +170,7 @@ class PatientListScreenState extends State<PatientListScreen> {
                                 child: ElevatedButton(
                                   onPressed: () async {
                                     final roomId = patient['roomId'];
+                                    final roomIdNum = patient['_id'];
                                     final phone = patient['patientPhone'];
 
                                     if (roomId == null || phone == null) {
@@ -195,7 +196,7 @@ class PatientListScreenState extends State<PatientListScreen> {
                                         prefs.getString('X-Server') ?? '';
 
                                     final uri = Uri.parse(
-                                      'https://runner-api-v2.medsoft.care/api/gateway/general/get/api/inpatient/ambulance/sendToMedsoftApp?roomId=$roomId&patientPhone=$phone',
+                                      'https://runner-api-v2.medsoft.care/api/gateway/general/get/api/inpatient/ambulance/sendToMedsoftApp?roomId=$roomIdNum&patientPhone=$phone',
                                     );
 
                                     try {

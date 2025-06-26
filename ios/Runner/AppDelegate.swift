@@ -425,15 +425,14 @@ import UserNotifications
           let arrivedData = json["data"] as? [String: Any],
           let arrivedInFifty = arrivedData["arrivedInFifty"] as? Bool
         {
-
-          UserDefaults.standard.set(arrivedInFifty, forKey: "arrivedInFifty")
-          NSLog("Saved arrivedInFifty = \(arrivedInFifty) to UserDefaults")
-
           if arrivedInFifty {
             DispatchQueue.main.async {
-              self.flutterChannel?.invokeMethod("arrivedInFiftyReached", arguments: nil)
+              self.flutterChannel?.invokeMethod(
+                "arrivedInFiftyReached", arguments: ["arrivedInFifty": arrivedInFifty])
             }
           }
+
+          NSLog("arrivedInFifty in delegate \(arrivedInFifty)")
         }
 
         if httpResponse.statusCode == 200 {
