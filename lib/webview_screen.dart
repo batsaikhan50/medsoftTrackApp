@@ -155,6 +155,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
               duration: Duration(seconds: 1),
             ),
           );
+          Navigator.of(context).pop();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
