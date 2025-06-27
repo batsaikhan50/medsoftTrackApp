@@ -769,7 +769,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                   FocusScope.of(context).requestFocus(_usernameFocus);
                 },
                 decoration: InputDecoration(
-                  labelText: 'Утасны дугаар',
+                  labelText: 'Нэвтрэх нэр',
                   prefixIcon: const Icon(Icons.person),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
