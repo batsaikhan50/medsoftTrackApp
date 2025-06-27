@@ -78,9 +78,11 @@ class PatientListScreenState extends State<PatientListScreen> {
         });
       }
     } else {
-      // Handle error
       setState(() => isLoading = false);
       debugPrint('Failed to fetch patients: ${response.statusCode}');
+      if (response.statusCode == 401 || response.statusCode == 403) {
+        _logOut();
+      }
     }
   }
 
@@ -153,7 +155,6 @@ class PatientListScreenState extends State<PatientListScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // First row: Phone number
                           Text(
                             patientPhone,
                             style: const TextStyle(
@@ -163,7 +164,6 @@ class PatientListScreenState extends State<PatientListScreen> {
                           ),
                           const SizedBox(height: 12),
 
-                          // Second row: Buttons
                           Row(
                             children: [
                               Expanded(
@@ -204,7 +204,10 @@ class PatientListScreenState extends State<PatientListScreen> {
                                         uri,
                                         headers: {
                                           'X-Medsoft-Token': token,
-                                          'X-Server': server == 'Citizen' ? 'ui.medsoft.care' : server,
+                                          'X-Server':
+                                              server == 'Citizen'
+                                                  ? 'ui.medsoft.care'
+                                                  : server,
                                           'X-Token': Constants.xToken,
                                         },
                                       );
@@ -239,6 +242,10 @@ class PatientListScreenState extends State<PatientListScreen> {
                                               ),
                                             ),
                                           );
+                                          if (response.statusCode == 401 ||
+                                              response.statusCode == 403) {
+                                            _logOut();
+                                          }
                                         }
                                       } else {
                                         ScaffoldMessenger.of(
@@ -271,7 +278,7 @@ class PatientListScreenState extends State<PatientListScreen> {
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      const Text("Send SMS"),
+                                      const Text("Мессеж илгээх"),
                                       if (sentToPatient) ...[
                                         const SizedBox(width: 6),
                                         const Icon(
@@ -291,7 +298,7 @@ class PatientListScreenState extends State<PatientListScreen> {
                                       patientSent
                                           ? () async {
                                             final url = patient['url'];
-                                            final title = "Driver Map";
+                                            final title = "Дуудлагын жагсаалт";
                                             final roomId = patient['roomId'];
                                             final roomIdNum = patient['_id'];
                                             if (url != null &&
@@ -339,7 +346,7 @@ class PatientListScreenState extends State<PatientListScreen> {
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      const Text("See Map"),
+                                      const Text("Байршил"),
                                       if (arrived) ...[
                                         const SizedBox(width: 6),
                                         const Icon(
@@ -355,7 +362,6 @@ class PatientListScreenState extends State<PatientListScreen> {
                             ],
                           ),
 
-                          // Optional: Distance and duration shown below if arrived
                           if (arrived) ...[
                             const SizedBox(height: 8),
                             Text("Distance: ${distance ?? 'N/A'} km"),

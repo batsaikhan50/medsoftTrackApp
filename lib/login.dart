@@ -69,7 +69,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
   bool _isLoading = false;
   String _errorMessage = '';
   Map<String, String>? _selectedRole;
-  // String _selectedRole = '';
+
   bool _isPasswordLoginVisible = false;
   bool _isPasswordVisible = false;
   bool _isPasswordCheckVisible = false;
@@ -107,10 +107,6 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
   bool isMongolianCyrillic(String text) {
     return mongolianCyrillicRegex.hasMatch(text);
   }
-
-  // static const platform = MethodChannel(
-  //   'com.example.new_project_location/location',
-  // );
 
   Future<void> _getInitialScreenString() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -193,7 +189,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
 
     _passwordController.addListener(_updatePasswordRules);
     _passwordCheckController.addListener(_updatePasswordRules);
-    _regNoController.addListener(_validateRegNo); // Add this line
+    _regNoController.addListener(_validateRegNo);
 
     _dragPosition =
         _selectedToggleIndex *
@@ -408,18 +404,11 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
           _loadSharedPreferencesData();
 
           _isLoading = false;
-          // Navigator.pushReplacement(
-          //   context,
-          //   MaterialPageRoute(
-          //     builder: (context) {
-          //       return const MyHomePage(title: 'Байршил тогтоогч');
-          //     },
-          //   ),
-          // );
+
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => MyHomePage(title: 'Patient List'),
+              builder: (context) => MyHomePage(title: 'Дуудлагын жагсаалт'),
             ),
           );
         } else {
@@ -490,8 +479,6 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
 
   Widget buildAnimatedToggle() {
     List<Map<String, String>> toggleOptions = [
-      // {'label': 'Нэвтрэх', 'icon': 'assets/icon/userWithPhone.png'},
-      // {'label': 'Бүртгүүлэх', 'icon': 'assets/icon/ambulanceCar.png'},
       {'label': 'Нэвтрэх'},
       {'label': 'Бүртгүүлэх'},
     ];
@@ -550,8 +537,6 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                 decoration: BoxDecoration(
                   color:
                       _selectedToggleIndex == 0
-                          // ? const Color(0xFF1E88E5)
-                          // : const Color(0xFFE53935),
                           ? const Color(0xFF009688)
                           : const Color(0xFF0077b3),
                   borderRadius: BorderRadius.circular(25),
@@ -574,12 +559,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                           color: isSelected ? Colors.white : Colors.black87,
                           size: 24,
                         ),
-                        // Image.asset(
-                        //   option['icon']!,
-                        //   width: 24,
-                        //   height: 24,
-                        //   color: isSelected ? Colors.white : Colors.black87,
-                        // ),
+
                         const SizedBox(width: 8),
                         Text(
                           option['label']!,
@@ -607,7 +587,6 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
       keyboardBarColor: Colors.grey[200],
       actions: [
         if (_selectedToggleIndex == 0)
-          // KeyboardActionsItem(focusNode: _codeFocus),
           KeyboardActionsItem(
             focusNode: _usernameLoginFocus,
             displayArrows: true,
@@ -672,14 +651,10 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: SafeArea(
-          child:
-          // _selectedToggleIndex == 1
-          //     ?
-          KeyboardActions(
+          child: KeyboardActions(
             config: _buildKeyboardActionsConfig(context),
             child: _buildLoginForm(),
           ),
-          // : _buildLoginForm(),
         ),
       ),
     );
@@ -713,23 +688,6 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
             buildAnimatedToggle(),
             const SizedBox(height: 20),
 
-            // if (_selectedToggleIndex == 0)
-            //   TextFormField(
-            //     controller: _codeController,
-            //     focusNode: _codeFocus,
-            //     textInputAction: TextInputAction.done,
-            //     onFieldSubmitted: (_) => FocusScope.of(context).unfocus(),
-            //     keyboardType: TextInputType.text,
-            //     decoration: InputDecoration(
-            //       labelText: 'Нэг удаагын код',
-            //       prefixIcon: const Icon(Icons.vpn_key),
-            //       border: OutlineInputBorder(
-            //         borderRadius: BorderRadius.circular(12),
-            //       ),
-            //     ),
-            //   ),
-
-            // if (_selectedToggleIndex == 0) const SizedBox(height: 20),
             if (_serverNames.isNotEmpty && _selectedToggleIndex == 0)
               Container(
                 height: 56,
@@ -848,7 +806,6 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  // errorText: _passwordRulesStatus,
                 ),
               ),
 
@@ -881,7 +838,6 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  // errorText: _passwordRulesStatus,
                 ),
               ),
 
@@ -1051,7 +1007,6 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                         baseUrl.isNotEmpty &&
                         hospital != null) {
                       Navigator.push(
-                        // ignore: use_build_context_synchronously
                         context,
                         MaterialPageRoute(
                           builder:

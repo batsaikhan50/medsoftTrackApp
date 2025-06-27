@@ -82,23 +82,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
     });
   }
 
-  Future<void> _loadArrivedInFiftyFlag() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    // Print all stored preferences
-    for (var key in prefs.getKeys()) {
-      debugPrint("SharedPreference - $key: ${prefs.get(key)}");
-    }
-
-    debugPrint(
-      "prefs.getBool('arrivedInFifty'): ${prefs.getBool('arrivedInFifty')}",
-    );
-
-    setState(() {
-      arrivedInFifty = prefs.getBool('arrivedInFifty') ?? false;
-    });
-  }
-
   Future<void> _sendLocation() async {
     try {
       await platform.invokeMethod('sendLocationToAPIByButton');
@@ -252,13 +235,11 @@ class _WebViewScreenState extends State<WebViewScreen> {
         ),
       ),
       body:
-          widget.title == 'Driver Map'
+          widget.title == 'Дуудлагын жагсаалт'
               ? Stack(
                 children: [
-                  // The WebView itself
                   WebViewWidget(controller: _controller),
 
-                  // Refresh button - top right
                   Positioned(
                     top: 16,
                     right: 16,
@@ -271,27 +252,25 @@ class _WebViewScreenState extends State<WebViewScreen> {
                     ),
                   ),
 
-                  // Arrived button - now just below Refresh
                   if (widget.roomIdNum != null && arrivedInFifty)
                     Positioned(
                       top: 72,
                       right: 16,
                       child: _buildActionButton(
                         icon: Icons.check_circle,
-                        label: 'Arrived',
+                        label: 'Ирсэн',
                         onPressed: () {
                           _markArrived(widget.roomIdNum!);
                         },
                       ),
                     ),
 
-                  // Send Location button - bottom right but slightly to the left
                   Positioned(
                     bottom: 24,
-                    right: 90, // move a bit to the left from the right edge
+                    right: 90,
                     child: _buildActionButton(
                       icon: Icons.send,
-                      label: 'Send Location',
+                      label: 'Байршил илгээх',
                       onPressed: _sendLocation,
                     ),
                   ),

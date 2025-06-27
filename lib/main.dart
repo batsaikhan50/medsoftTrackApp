@@ -61,7 +61,7 @@ class MyApp extends StatelessWidget {
     bool isGotUsername = username != null && username.isNotEmpty;
 
     if (isLoggedIn && isGotToken && isGotMedsoftToken && isGotUsername) {
-      return const MyHomePage(title: 'Patient List');
+      return const MyHomePage(title: 'Дуудлагын жагсаалт');
     } else {
       return const LoginScreen();
     }
