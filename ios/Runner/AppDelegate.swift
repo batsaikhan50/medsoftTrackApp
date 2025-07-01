@@ -21,7 +21,9 @@ import UserNotifications
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    GeneratedPluginRegistrant.register(with: self)
+    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+      self.requestTrackingAuthorization()
+    }
 
     let controller = window?.rootViewController as! FlutterViewController
     flutterChannel = FlutterMethodChannel(
@@ -74,6 +76,7 @@ import UserNotifications
         result(FlutterMethodNotImplemented)
       }
     }
+    GeneratedPluginRegistrant.register(with: self)
 
     BGTaskScheduler.shared.register(
       forTaskWithIdentifier: "com.example.new_project_location.sendLocation", using: nil
@@ -82,15 +85,14 @@ import UserNotifications
     }
 
     scheduleBackgroundTask()
-
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-      self.requestTrackingAuthorization()
-    }
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
   func requestTrackingAuthorization() {
     if #available(iOS 14, *) {
+      let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
+      print("IDFA: \(idfa)")
+
       ATTrackingManager.requestTrackingAuthorization { status in
         switch status {
         case .authorized:

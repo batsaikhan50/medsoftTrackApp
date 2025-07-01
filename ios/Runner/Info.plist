@@ -30,6 +30,8 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>This identifier will be used to share location between ambulance and patient.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>This app uses your location in the background to track ambulance movement and improve emergency response accuracy during active duty.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
@@ -40,8 +42,6 @@
 	<string>Location is used while the app is open to help manage emergency responses and track routes during ambulance operation.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<key>NSUserTrackingUsageDescription</key>
-	<string>This identifier will be used to share location between ambulance and patient.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
