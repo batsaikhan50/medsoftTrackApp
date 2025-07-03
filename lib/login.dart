@@ -483,98 +483,101 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
       {'label': 'Бүртгүүлэх'},
     ];
 
-    double totalWidth = MediaQuery.of(context).size.width - 32;
-    double knobWidth = (totalWidth - 8) / 2;
+    final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double totalWidth = isTablet ? screenWidth * 0.5 : screenWidth - 32;
+    final double knobWidth = (totalWidth - 8) / 2;
 
-    return GestureDetector(
-      onHorizontalDragUpdate: (details) {
-        setState(() {
-          _dragPosition += details.delta.dx;
-          _dragPosition = _dragPosition.clamp(0, knobWidth);
-        });
-      },
-      onHorizontalDragEnd: (_) {
-        setState(() {
-          if (_dragPosition < (knobWidth / 2)) {
-            _selectedToggleIndex = 0;
-            _dragPosition = 0;
-          } else {
-            _selectedToggleIndex = 1;
-            _dragPosition = knobWidth;
-          }
-        });
-      },
-      onTapDown: (details) {
-        final dx = details.localPosition.dx;
-        setState(() {
-          if (dx < totalWidth / 2) {
-            _selectedToggleIndex = 0;
-            _dragPosition = 0;
-          } else {
-            _selectedToggleIndex = 1;
-            _dragPosition = knobWidth;
-          }
-        });
-      },
+    return Center(
       child: Container(
+        width: totalWidth,
         height: 56,
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
           color: Colors.grey[300],
           borderRadius: BorderRadius.circular(30),
         ),
-        child: Stack(
-          children: [
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOut,
-              left: _dragPosition,
-              top: 0,
-              bottom: 0,
-              width: knobWidth,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                decoration: BoxDecoration(
-                  color:
-                      _selectedToggleIndex == 0
-                          ? const Color(0xFF009688)
-                          : const Color(0xFF0077b3),
-                  borderRadius: BorderRadius.circular(25),
+        child: GestureDetector(
+          onHorizontalDragUpdate: (details) {
+            setState(() {
+              _dragPosition += details.delta.dx;
+              _dragPosition = _dragPosition.clamp(0, knobWidth);
+            });
+          },
+          onHorizontalDragEnd: (_) {
+            setState(() {
+              if (_dragPosition < (knobWidth / 2)) {
+                _selectedToggleIndex = 0;
+                _dragPosition = 0;
+              } else {
+                _selectedToggleIndex = 1;
+                _dragPosition = knobWidth;
+              }
+            });
+          },
+          onTapDown: (details) {
+            final dx = details.localPosition.dx;
+            setState(() {
+              if (dx < totalWidth / 2) {
+                _selectedToggleIndex = 0;
+                _dragPosition = 0;
+              } else {
+                _selectedToggleIndex = 1;
+                _dragPosition = knobWidth;
+              }
+            });
+          },
+          child: Stack(
+            children: [
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOut,
+                left: _dragPosition,
+                top: 0,
+                bottom: 0,
+                width: knobWidth,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  decoration: BoxDecoration(
+                    color:
+                        _selectedToggleIndex == 0
+                            ? const Color(0xFF009688)
+                            : const Color(0xFF0077b3),
+                    borderRadius: BorderRadius.circular(25),
+                  ),
                 ),
               ),
-            ),
+              Row(
+                children: List.generate(toggleOptions.length, (index) {
+                  final option = toggleOptions[index];
+                  final isSelected = index == _selectedToggleIndex;
 
-            Row(
-              children: List.generate(toggleOptions.length, (index) {
-                final option = toggleOptions[index];
-                final isSelected = index == _selectedToggleIndex;
-
-                return Expanded(
-                  child: Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          index == 0 ? Icons.login : Icons.person_add,
-                          color: isSelected ? Colors.white : Colors.black87,
-                          size: 24,
-                        ),
-
-                        const SizedBox(width: 8),
-                        Text(
-                          option['label']!,
-                          style: TextStyle(
+                  return Expanded(
+                    child: Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            index == 0 ? Icons.login : Icons.person_add,
                             color: isSelected ? Colors.white : Colors.black87,
-                            fontWeight: FontWeight.w600,
+                            size: 24,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          Text(
+                            option['label']!,
+                            style: TextStyle(
+                              color: isSelected ? Colors.white : Colors.black87,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              }),
-            ),
-          ],
+                  );
+                }),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -661,6 +664,10 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildLoginForm() {
+    final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final maxWidth =
+        isTablet ? MediaQuery.of(context).size.width * 0.5 : double.infinity;
+
     return SingleChildScrollView(
       controller: _scrollController,
       padding: EdgeInsets.only(
@@ -670,409 +677,422 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
         bottom: MediaQuery.of(context).viewInsets.bottom + 32,
       ),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      child: Form(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Image.asset('assets/icon/locationlogologin.png', height: 150),
-            const Text(
-              'Тавтай морил',
-              style: TextStyle(
-                fontSize: 22.4,
-                color: Color(0xFF009688),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            buildAnimatedToggle(),
-            const SizedBox(height: 20),
-
-            if (_serverNames.isNotEmpty && _selectedToggleIndex == 0)
-              Container(
-                height: 56,
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: const Color(0xFF808080),
-                    width: 1.0,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: maxWidth),
+          child: Form(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Image.asset('assets/icon/locationlogologin.png', height: 150),
+                const Text(
+                  'Тавтай морил',
+                  style: TextStyle(
+                    fontSize: 22.4,
+                    color: Color(0xFF009688),
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.local_hospital, color: Colors.black),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: DropdownButton<Map<String, String>>(
-                        value: _selectedRole,
-                        hint: const Text('Эмнэлэг сонгох'),
-                        isExpanded: true,
-                        onChanged: (Map<String, String>? newValue) async {
-                          if (newValue != null) {
-                            setState(() {
-                              _selectedRole = newValue;
-                              _errorMessage = '';
-                            });
-                            SharedPreferences prefs =
-                                await SharedPreferences.getInstance();
-                            await prefs.setString(
-                              'forgetUrl',
-                              newValue['url'] ?? '',
-                            );
-                          }
-                        },
-                        items:
-                            _serverNames
-                                .map<DropdownMenuItem<Map<String, String>>>((
-                                  Map<String, String> value,
-                                ) {
+                const SizedBox(height: 20),
+
+                buildAnimatedToggle(),
+                const SizedBox(height: 20),
+
+                if (_serverNames.isNotEmpty && _selectedToggleIndex == 0)
+                  Container(
+                    height: 56,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFF808080),
+                        width: 1.0,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.local_hospital, color: Colors.black),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: DropdownButton<Map<String, String>>(
+                            value: _selectedRole,
+                            hint: const Text('Эмнэлэг сонгох'),
+                            isExpanded: true,
+                            onChanged: (Map<String, String>? newValue) async {
+                              if (newValue != null) {
+                                setState(() {
+                                  _selectedRole = newValue;
+                                  _errorMessage = '';
+                                });
+                                SharedPreferences prefs =
+                                    await SharedPreferences.getInstance();
+                                await prefs.setString(
+                                  'forgetUrl',
+                                  newValue['url'] ?? '',
+                                );
+                              }
+                            },
+                            items:
+                                _serverNames.map<
+                                  DropdownMenuItem<Map<String, String>>
+                                >((Map<String, String> value) {
                                   return DropdownMenuItem<Map<String, String>>(
                                     value: value,
                                     child: Text(value['name']!),
                                   );
-                                })
-                                .toList(),
-                        underline: const SizedBox.shrink(),
+                                }).toList(),
+                            underline: const SizedBox.shrink(),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                if (_serverNames.isNotEmpty && _selectedToggleIndex == 0)
+                  const SizedBox(height: 20),
+
+                if (_selectedToggleIndex == 0)
+                  TextFormField(
+                    controller: _usernameLoginController,
+                    focusNode: _usernameLoginFocus,
+                    textInputAction: TextInputAction.next,
+                    onFieldSubmitted: (_) {
+                      FocusScope.of(context).requestFocus(_usernameLoginFocus);
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'Нэвтрэх нэр',
+                      prefixIcon: const Icon(Icons.person),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                  ],
-                ),
-              ),
-
-            if (_serverNames.isNotEmpty && _selectedToggleIndex == 0)
-              const SizedBox(height: 20),
-
-            if (_selectedToggleIndex == 0)
-              TextFormField(
-                controller: _usernameLoginController,
-                focusNode: _usernameLoginFocus,
-                textInputAction: TextInputAction.next,
-                onFieldSubmitted: (_) {
-                  FocusScope.of(context).requestFocus(_usernameLoginFocus);
-                },
-                decoration: InputDecoration(
-                  labelText: 'Нэвтрэх нэр',
-                  prefixIcon: const Icon(Icons.person),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
                   ),
-                ),
-              ),
 
-            if (_selectedToggleIndex == 1)
-              TextFormField(
-                controller: _usernameController,
-                focusNode: _usernameFocus,
-                textInputAction: TextInputAction.next,
-                onFieldSubmitted: (_) {
-                  FocusScope.of(context).requestFocus(_usernameFocus);
-                },
-                decoration: InputDecoration(
-                  labelText: 'Нэвтрэх нэр',
-                  prefixIcon: const Icon(Icons.person),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-
-            const SizedBox(height: 20),
-
-            if (_selectedToggleIndex == 0)
-              TextFormField(
-                controller: _passwordLoginController,
-                focusNode: _passwordLoginFocus,
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) {
-                  FocusScope.of(context).unfocus();
-                },
-                obscureText: !_isPasswordLoginVisible,
-                decoration: InputDecoration(
-                  labelText: 'Нууц үг',
-                  prefixIcon: const Icon(Icons.lock),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _isPasswordLoginVisible
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isPasswordLoginVisible = !_isPasswordLoginVisible;
-                      });
+                if (_selectedToggleIndex == 1)
+                  TextFormField(
+                    controller: _usernameController,
+                    focusNode: _usernameFocus,
+                    textInputAction: TextInputAction.next,
+                    onFieldSubmitted: (_) {
+                      FocusScope.of(context).requestFocus(_usernameFocus);
                     },
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-
-            if (_selectedToggleIndex == 0) const SizedBox(height: 20),
-
-            if (_selectedToggleIndex == 1)
-              TextFormField(
-                controller: _passwordController,
-                focusNode: _passwordFocus,
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) {
-                  FocusScope.of(context).unfocus();
-                },
-                obscureText: !_isPasswordVisible,
-                decoration: InputDecoration(
-                  labelText: 'Нууц үг',
-                  prefixIcon: const Icon(Icons.lock),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _isPasswordVisible
-                          ? Icons.visibility
-                          : Icons.visibility_off,
+                    decoration: InputDecoration(
+                      labelText: 'Нэвтрэх нэр',
+                      prefixIcon: const Icon(Icons.person),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _isPasswordVisible = !_isPasswordVisible;
-                      });
-                    },
                   ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
 
-            if (_selectedToggleIndex == 1 &&
-                _passwordController.text.isNotEmpty &&
-                _passwordRulesStatus.isNotEmpty)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children:
-                    _passwordRulesStatus.entries.map((entry) {
-                      return Row(
-                        children: [
-                          Icon(
-                            entry.value ? Icons.check_circle : Icons.cancel,
-                            color: entry.value ? Colors.green : Colors.red,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              entry.key,
-                              style: TextStyle(
-                                fontSize: 13,
+                const SizedBox(height: 20),
+
+                if (_selectedToggleIndex == 0)
+                  TextFormField(
+                    controller: _passwordLoginController,
+                    focusNode: _passwordLoginFocus,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) {
+                      FocusScope.of(context).unfocus();
+                    },
+                    obscureText: !_isPasswordLoginVisible,
+                    decoration: InputDecoration(
+                      labelText: 'Нууц үг',
+                      prefixIcon: const Icon(Icons.lock),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _isPasswordLoginVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _isPasswordLoginVisible = !_isPasswordLoginVisible;
+                          });
+                        },
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+
+                if (_selectedToggleIndex == 0) const SizedBox(height: 20),
+
+                if (_selectedToggleIndex == 1)
+                  TextFormField(
+                    controller: _passwordController,
+                    focusNode: _passwordFocus,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) {
+                      FocusScope.of(context).unfocus();
+                    },
+                    obscureText: !_isPasswordVisible,
+                    decoration: InputDecoration(
+                      labelText: 'Нууц үг',
+                      prefixIcon: const Icon(Icons.lock),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _isPasswordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _isPasswordVisible = !_isPasswordVisible;
+                          });
+                        },
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+
+                if (_selectedToggleIndex == 1 &&
+                    _passwordController.text.isNotEmpty &&
+                    _passwordRulesStatus.isNotEmpty)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children:
+                        _passwordRulesStatus.entries.map((entry) {
+                          return Row(
+                            children: [
+                              Icon(
+                                entry.value ? Icons.check_circle : Icons.cancel,
                                 color: entry.value ? Colors.green : Colors.red,
+                                size: 18,
                               ),
-                            ),
-                          ),
-                        ],
-                      );
-                    }).toList(),
-              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  entry.key,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color:
+                                        entry.value ? Colors.green : Colors.red,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList(),
+                  ),
 
-            if (_selectedToggleIndex == 1) const SizedBox(height: 20),
-            if (_selectedToggleIndex == 1)
-              TextFormField(
-                controller: _passwordCheckController,
-                focusNode: _passwordCheckFocus,
-                textInputAction: TextInputAction.done,
-                onFieldSubmitted: (_) {
-                  FocusScope.of(context).unfocus();
-                },
-                obscureText: !_isPasswordCheckVisible,
-                decoration: InputDecoration(
-                  labelText: 'Нууц үг давтах',
-                  prefixIcon: const Icon(Icons.lock),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _isPasswordCheckVisible
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _isPasswordCheckVisible = !_isPasswordCheckVisible;
-                      });
+                if (_selectedToggleIndex == 1) const SizedBox(height: 20),
+
+                if (_selectedToggleIndex == 1)
+                  TextFormField(
+                    controller: _passwordCheckController,
+                    focusNode: _passwordCheckFocus,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) {
+                      FocusScope.of(context).unfocus();
                     },
+                    obscureText: !_isPasswordCheckVisible,
+                    decoration: InputDecoration(
+                      labelText: 'Нууц үг давтах',
+                      prefixIcon: const Icon(Icons.lock),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _isPasswordCheckVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _isPasswordCheckVisible = !_isPasswordCheckVisible;
+                          });
+                        },
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      errorText: _passwordCheckValidationError,
+                    ),
                   ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  errorText: _passwordCheckValidationError,
-                ),
-              ),
 
-            if (_selectedToggleIndex == 1) const SizedBox(height: 20),
+                if (_selectedToggleIndex == 1) const SizedBox(height: 20),
 
-            if (_selectedToggleIndex == 1)
-              TextFormField(
-                controller: _regNoController,
-                focusNode: _regNoFocus,
-                textInputAction: TextInputAction.next,
-                onFieldSubmitted: (_) {
-                  FocusScope.of(context).requestFocus(_passwordFocus);
-                },
-                decoration: InputDecoration(
-                  labelText: 'Регистрын дугаар',
-                  prefixIcon: const Icon(Icons.badge),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  errorText: _regNoValidationError,
-                ),
-                onChanged: (value) {
-                  _regNoController.value = _regNoController.value.copyWith(
-                    text: value.toUpperCase(),
-                    selection: TextSelection.collapsed(offset: value.length),
-                  );
-                },
-              ),
-
-            if (_selectedToggleIndex == 1) const SizedBox(height: 20),
-
-            if (_selectedToggleIndex == 1)
-              TextFormField(
-                controller: _lastnameController,
-                focusNode: _lastnameFocus,
-                textInputAction: TextInputAction.next,
-                onFieldSubmitted: (_) {
-                  FocusScope.of(context).requestFocus(_passwordFocus);
-                },
-                decoration: InputDecoration(
-                  labelText: 'Овог',
-                  prefixIcon: const Icon(Icons.badge),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  errorText: _lastnameValidationError,
-                ),
-                onChanged: (value) {
-                  _lastnameController
-                      .value = _lastnameController.value.copyWith(
-                    text: value,
-                    selection: TextSelection.collapsed(offset: value.length),
-                  );
-                },
-              ),
-
-            if (_selectedToggleIndex == 1) const SizedBox(height: 20),
-
-            if (_selectedToggleIndex == 1)
-              TextFormField(
-                controller: _firstnameController,
-                focusNode: _firstnameFocus,
-                textInputAction: TextInputAction.next,
-                onFieldSubmitted: (_) {
-                  FocusScope.of(context).requestFocus(_passwordFocus);
-                },
-                decoration: InputDecoration(
-                  labelText: 'Нэр',
-                  prefixIcon: const Icon(Icons.badge),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  errorText: _firstnameValidationError,
-                ),
-                onChanged: (value) {
-                  _firstnameController
-                      .value = _firstnameController.value.copyWith(
-                    text: value,
-                    selection: TextSelection.collapsed(offset: value.length),
-                  );
-                },
-              ),
-
-            if (_selectedToggleIndex == 1) const SizedBox(height: 20),
-
-            if (_errorMessage.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Text(
-                  _errorMessage,
-                  style: const TextStyle(color: Colors.red),
-                ),
-              ),
-
-            if (_selectedToggleIndex == 1)
-              Align(
-                alignment: Alignment.centerRight,
-                child: GestureDetector(
-                  onTap: () async {
-                    SharedPreferences prefs =
-                        await SharedPreferences.getInstance();
-                    String? baseUrl = prefs.getString('forgetUrl');
-                    String? hospital = _selectedRole?['name'];
-
-                    if (baseUrl != null &&
-                        baseUrl.isNotEmpty &&
-                        hospital != null) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) => WebViewScreen(
-                                url:
-                                    '$baseUrl/forget?callback=medsofttrack://callback',
-                                title: hospital,
-                              ),
+                if (_selectedToggleIndex == 1)
+                  TextFormField(
+                    controller: _regNoController,
+                    focusNode: _regNoFocus,
+                    textInputAction: TextInputAction.next,
+                    onFieldSubmitted: (_) {
+                      FocusScope.of(context).requestFocus(_passwordFocus);
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'Регистрын дугаар',
+                      prefixIcon: const Icon(Icons.badge),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      errorText: _regNoValidationError,
+                    ),
+                    onChanged: (value) {
+                      _regNoController.value = _regNoController.value.copyWith(
+                        text: value.toUpperCase(),
+                        selection: TextSelection.collapsed(
+                          offset: value.length,
                         ),
                       );
-                    } else {
-                      setState(() {
-                        _errorMessage =
-                            'Нууц үг солихын тулд эмнэлэг сонгоно уу.';
-                      });
-                    }
-                  },
-                  child: const Text(
-                    'Нууц үг мартсан?',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: Color(0xFF009688),
+                    },
+                  ),
+
+                if (_selectedToggleIndex == 1) const SizedBox(height: 20),
+
+                if (_selectedToggleIndex == 1)
+                  TextFormField(
+                    controller: _lastnameController,
+                    focusNode: _lastnameFocus,
+                    textInputAction: TextInputAction.next,
+                    onFieldSubmitted: (_) {
+                      FocusScope.of(context).requestFocus(_passwordFocus);
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'Овог',
+                      prefixIcon: const Icon(Icons.badge),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      errorText: _lastnameValidationError,
+                    ),
+                    onChanged: (value) {
+                      _lastnameController.value = _lastnameController.value
+                          .copyWith(
+                            text: value,
+                            selection: TextSelection.collapsed(
+                              offset: value.length,
+                            ),
+                          );
+                    },
+                  ),
+
+                if (_selectedToggleIndex == 1) const SizedBox(height: 20),
+
+                if (_selectedToggleIndex == 1)
+                  TextFormField(
+                    controller: _firstnameController,
+                    focusNode: _firstnameFocus,
+                    textInputAction: TextInputAction.next,
+                    onFieldSubmitted: (_) {
+                      FocusScope.of(context).requestFocus(_passwordFocus);
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'Нэр',
+                      prefixIcon: const Icon(Icons.badge),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      errorText: _firstnameValidationError,
+                    ),
+                    onChanged: (value) {
+                      _firstnameController.value = _firstnameController.value
+                          .copyWith(
+                            text: value,
+                            selection: TextSelection.collapsed(
+                              offset: value.length,
+                            ),
+                          );
+                    },
+                  ),
+
+                if (_selectedToggleIndex == 1) const SizedBox(height: 20),
+
+                if (_errorMessage.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Text(
+                      _errorMessage,
+                      style: const TextStyle(color: Colors.red),
                     ),
                   ),
-                ),
-              ),
 
-            if (_selectedToggleIndex == 1) const SizedBox(height: 10),
+                if (_selectedToggleIndex == 1)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: GestureDetector(
+                      onTap: () async {
+                        SharedPreferences prefs =
+                            await SharedPreferences.getInstance();
+                        String? baseUrl = prefs.getString('forgetUrl');
+                        String? hospital = _selectedRole?['name'];
 
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    _selectedToggleIndex == 0
-                        ? const Color(0xFF009688)
-                        : const Color(0xFF0077b3),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                minimumSize: const Size(double.infinity, 40),
-              ),
-              onPressed:
-                  _isLoading
-                      ? null
-                      : () {
-                        if (_selectedToggleIndex == 1) {
-                          if (_validateRegisterInputs()) {
-                            _register();
-                          }
+                        if (baseUrl != null &&
+                            baseUrl.isNotEmpty &&
+                            hospital != null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (context) => WebViewScreen(
+                                    url:
+                                        '$baseUrl/forget?callback=medsofttrack://callback',
+                                    title: hospital,
+                                  ),
+                            ),
+                          );
                         } else {
-                          _login();
+                          setState(() {
+                            _errorMessage =
+                                'Нууц үг солихын тулд эмнэлэг сонгоно уу.';
+                          });
                         }
                       },
-              child:
-                  _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : Text(
-                        _selectedToggleIndex == 0 ? 'НЭВТРЭХ' : 'БҮРТГҮҮЛЭХ',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: Colors.white,
+                      child: const Text(
+                        'Нууц үг мартсан?',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: Color(0xFF009688),
                         ),
                       ),
+                    ),
+                  ),
+
+                if (_selectedToggleIndex == 1) const SizedBox(height: 10),
+
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        _selectedToggleIndex == 0
+                            ? const Color(0xFF009688)
+                            : const Color(0xFF0077b3),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    minimumSize: const Size(double.infinity, 40),
+                  ),
+                  onPressed:
+                      _isLoading
+                          ? null
+                          : () {
+                            if (_selectedToggleIndex == 1) {
+                              if (_validateRegisterInputs()) {
+                                _register();
+                              }
+                            } else {
+                              _login();
+                            }
+                          },
+                  child:
+                      _isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : Text(
+                            _selectedToggleIndex == 0
+                                ? 'НЭВТРЭХ'
+                                : 'БҮРТГҮҮЛЭХ',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: Colors.white,
+                            ),
+                          ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
