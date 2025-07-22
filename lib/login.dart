@@ -154,17 +154,17 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
           });
         } else {
           setState(() {
-            _errorMessage = 'Failed to load servers.';
+            _errorMessage = 'Эмнэлгүүдийг дуудах үйлдэл амжилтгүй боллоо.';
           });
         }
       } else {
         setState(() {
-          _errorMessage = 'Error fetching server data.';
+          _errorMessage = 'Серверийн мэдээлэл авахад алдаа гарлаа.';
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Exception: $e';
+        _errorMessage = 'Алдаа гарлаа: $e';
       });
     }
   }
@@ -311,7 +311,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
           });
         } else {
           setState(() {
-            _errorMessage = 'Register failed: ${data['message']}';
+            _errorMessage = 'Бүртгэл амжилтгүй боллоо: ${data['message']}';
             _isLoading = false;
           });
         }
@@ -319,13 +319,13 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isLoggedIn', false);
         setState(() {
-          _errorMessage = 'Error register. Please try again.';
+          _errorMessage = 'Бүртгэх үед алдаа гарлаа. Дахин оролдоно уу.';
           _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Exception: $e';
+        _errorMessage = 'Алдаа гарлаа: $e';
         _isLoading = false;
       });
     }
@@ -338,7 +338,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
 
     if (_selectedRole == null) {
       setState(() {
-        _errorMessage = 'Please select a server';
+        _errorMessage = 'Эмнэлэг сонгоно уу.';
         _isLoading = false;
       });
       return;
@@ -413,7 +413,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
           );
         } else {
           setState(() {
-            _errorMessage = 'Login failed: ${data['message']}';
+            _errorMessage = 'Нэвтрэхэд амжилтгүй боллоо: ${data['message']}';
             _isLoading = false;
           });
         }
@@ -421,13 +421,13 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isLoggedIn', false);
         setState(() {
-          _errorMessage = 'Error logging in. Please try again.';
+          _errorMessage = 'Нэвтрэх үед алдаа гарлаа. Дахин оролдоно уу.';
           _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Exception: $e';
+        _errorMessage = 'Алдаа гарлаа: $e';
         _isLoading = false;
       });
     }

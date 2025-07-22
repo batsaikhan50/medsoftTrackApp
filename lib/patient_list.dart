@@ -167,6 +167,7 @@ class PatientListScreenState extends State<PatientListScreen> {
                           Row(
                             children: [
                               Expanded(
+                                flex: 3,
                                 child: ElevatedButton(
                                   onPressed: () async {
                                     final roomId = patient['roomId'];
@@ -278,7 +279,9 @@ class PatientListScreenState extends State<PatientListScreen> {
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      const Text("Мессеж илгээх"),
+                                      Flexible(
+                                        child: const Text("Мессеж илгээх"),
+                                      ),
                                       if (sentToPatient) ...[
                                         const SizedBox(width: 6),
                                         const Icon(
@@ -293,6 +296,7 @@ class PatientListScreenState extends State<PatientListScreen> {
                               ),
                               const SizedBox(width: 8),
                               Expanded(
+                                flex: 2,
                                 child: ElevatedButton(
                                   onPressed:
                                       patientSent
