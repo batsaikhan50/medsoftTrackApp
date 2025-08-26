@@ -371,7 +371,7 @@ import UserNotifications
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
     request.addValue(token, forHTTPHeaderField: "X-Token")
-    request.addValue(hospital, forHTTPHeaderField: "X-Server")
+    request.addValue(hospital, forHTTPHeaderField: "X-Tenant")
     request.addValue(medsoftToken, forHTTPHeaderField: "X-Medsoft-Token")
     request.addValue("Bearer \(medsoftToken)", forHTTPHeaderField: "Authorization")
     request.addValue("application/json", forHTTPHeaderField: "Content-Type")

@@ -111,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
   Future<void> _getInitialScreenString() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-    String? xServer = prefs.getString('X-Server');
+    String? xServer = prefs.getString('X-Tenant');
     bool isGotToken = xServer != null && xServer.isNotEmpty;
 
     String? xMedsoftServer = prefs.getString('X-Medsoft-Token');
@@ -131,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _fetchServerData() async {
-    const url = 'https://runner-api-v2.medsoft.care/api/gateway/servers';
+    const url = 'https://runner-api.medsoft.care/api/gateway/servers';
     final headers = {'X-Token': Constants.xToken};
 
     try {
@@ -300,7 +300,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
           SharedPreferences prefs = await SharedPreferences.getInstance();
 
           await prefs.setBool('isLoggedIn', false);
-          await prefs.remove('X-Server');
+          await prefs.remove('X-Tenant');
           await prefs.remove('X-Medsoft-Token');
           await prefs.remove('Username');
 
@@ -361,7 +361,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
             ? {'Content-Type': 'application/json'}
             : {
               'X-Token': Constants.xToken,
-              'X-Server': _selectedRole?['name'] ?? '',
+              'X-Tenant': _selectedRole?['name'] ?? '',
               'Content-Type': 'application/json',
             };
 
@@ -373,7 +373,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
         Uri.parse(
           _selectedRole?['name'] == 'Citizen'
               ? 'https://app.medsoft.care/api/auth/login'
-              : 'https://runner-api-v2.medsoft.care/api/gateway/auth',
+              : 'https://runner-api.medsoft.care/api/gateway/auth',
         ),
         headers: headers,
         body: json.encode(body),
@@ -395,7 +395,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
 
           final String token = data['data']['token'];
 
-          await prefs.setString('X-Server', _selectedRole?['name'] ?? '');
+          await prefs.setString('X-Tenant', _selectedRole?['name'] ?? '');
           await prefs.setString('X-Medsoft-Token', token);
 
           debugPrint('Username controller: ${_usernameLoginController.text}');
@@ -695,8 +695,8 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                 ),
                 const SizedBox(height: 20),
 
-                buildAnimatedToggle(),
-                const SizedBox(height: 20),
+                // buildAnimatedToggle(),
+                // const SizedBox(height: 20),
 
                 if (_serverNames.isNotEmpty && _selectedToggleIndex == 0)
                   Container(

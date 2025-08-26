@@ -114,7 +114,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('X-Medsoft-Token') ?? '';
-      final server = prefs.getString('X-Server') ?? '';
+      final server = prefs.getString('X-Tenant') ?? '';
 
       final uri = Uri.parse('https://app.medsoft.care/api/room/arrived?id=$id');
 
@@ -123,7 +123,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
         headers: {
           'Authorization': 'Bearer $token',
           'X-Medsoft-Token': token,
-          'X-Server': server,
+          'X-Tenant': server,
           'X-Token': Constants.xToken,
         },
       );

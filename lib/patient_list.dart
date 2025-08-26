@@ -55,7 +55,7 @@ class PatientListScreenState extends State<PatientListScreen> {
   Future<void> fetchPatients() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('X-Medsoft-Token') ?? '';
-    final server = prefs.getString('X-Server') ?? '';
+    final server = prefs.getString('X-Tenant') ?? '';
 
     final uri = Uri.parse('https://app.medsoft.care/api/room/get/driver');
 
@@ -64,7 +64,7 @@ class PatientListScreenState extends State<PatientListScreen> {
       headers: {
         'Authorization': 'Bearer $token',
         'X-Medsoft-Token': token,
-        'X-Server': server,
+        'X-Tenant': server,
         'X-Token': Constants.xToken,
       },
     );
@@ -91,7 +91,7 @@ class PatientListScreenState extends State<PatientListScreen> {
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove('isLoggedIn');
-    await prefs.remove('X-Server');
+    await prefs.remove('X-Tenant');
     await prefs.remove('X-Medsoft-Token');
     await prefs.remove('Username');
 
@@ -194,10 +194,10 @@ class PatientListScreenState extends State<PatientListScreen> {
                                         prefs.getString('X-Medsoft-Token') ??
                                         '';
                                     final server =
-                                        prefs.getString('X-Server') ?? '';
+                                        prefs.getString('X-Tenant') ?? '';
 
                                     final uri = Uri.parse(
-                                      'https://runner-api-v2.medsoft.care/api/gateway/general/get/api/inpatient/ambulance/sendToMedsoftApp?roomId=$roomIdNum&patientPhone=$phone',
+                                      'https://runner-api.medsoft.care/api/gateway/general/get/api/inpatient/ambulance/sendToMedsoftApp?roomId=$roomIdNum&patientPhone=$phone',
                                     );
 
                                     try {
@@ -205,7 +205,7 @@ class PatientListScreenState extends State<PatientListScreen> {
                                         uri,
                                         headers: {
                                           'X-Medsoft-Token': token,
-                                          'X-Server':
+                                          'X-Tenant':
                                               server == 'Citizen'
                                                   ? 'ui.medsoft.care'
                                                   : server,
@@ -347,10 +347,35 @@ class PatientListScreenState extends State<PatientListScreen> {
                                             }
                                           }
                                           : null,
+
+                                  // child: Row(
+                                  //   mainAxisAlignment: MainAxisAlignment.center,
+                                  //   children: [
+                                  //     const Text("Байршил"),
+                                  //     if (arrived) ...[
+                                  //       const SizedBox(width: 6),
+                                  //       const Icon(
+                                  //         Icons.check,
+                                  //         color: Colors.green,
+                                  //         size: 18,
+                                  //       ),
+                                  //     ],
+                                  //   ],
+                                  // ),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      const Text("Байршил"),
+                                      Expanded(
+                                        child: Text(
+                                          "Байршил",
+                                          overflow:
+                                              TextOverflow
+                                                  .ellipsis, // prevents overflow
+                                          textAlign:
+                                              TextAlign
+                                                  .center, // keeps it centered inside Expanded
+                                        ),
+                                      ),
                                       if (arrived) ...[
                                         const SizedBox(width: 6),
                                         const Icon(

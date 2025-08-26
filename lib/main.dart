@@ -50,7 +50,7 @@ class MyApp extends StatelessWidget {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
 
-    String? xServer = prefs.getString('X-Server');
+    String? xServer = prefs.getString('X-Tenant');
     bool isGotToken = xServer != null && xServer.isNotEmpty;
 
     String? xMedsoftServer = prefs.getString('X-Medsoft-Token');
@@ -141,7 +141,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
     try {
       await platform.invokeMethod('sendXServerToAppDelegate', {
-        'xServer': prefs.getString('X-Server'),
+        'xServer': prefs.getString('X-Tenant'),
       });
     } on PlatformException catch (e) {
       debugPrint("Failed to send xToken to AppDelegate: '${e.message}'.");
@@ -164,7 +164,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
 
-    String? xServer = prefs.getString('X-Server');
+    String? xServer = prefs.getString('X-Tenant');
     bool isGotToken = xServer != null && xServer.isNotEmpty;
 
     String? xMedsoftServer = prefs.getString('X-Medsoft-Token');
@@ -318,7 +318,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove('isLoggedIn');
-    await prefs.remove('X-Server');
+    await prefs.remove('X-Tenant');
     await prefs.remove('X-Medsoft-Token');
     await prefs.remove('Username');
 
