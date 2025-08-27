@@ -54,7 +54,8 @@ class _WebViewScreenState extends State<WebViewScreen> {
       ),
     );
 
-    const platform = MethodChannel('com.example.new_project_location/location');
+    platform.invokeMethod('startLocationManagerAfterLogin');
+
     platform.setMethodCallHandler((call) async {
       if (call.method == 'arrivedInFiftyReached') {
         final bool arrived = call.arguments?['arrivedInFifty'] ?? false;
@@ -138,6 +139,8 @@ class _WebViewScreenState extends State<WebViewScreen> {
               duration: Duration(seconds: 1),
             ),
           );
+
+          await platform.invokeMethod('startIdleLocation');
           Navigator.of(context).pop();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -202,7 +205,11 @@ class _WebViewScreenState extends State<WebViewScreen> {
         automaticallyImplyLeading: false,
         backgroundColor: const Color(0xFF009688),
         title: GestureDetector(
-          onTap: () => Navigator.pop(context),
+          onTap:
+              () => {
+                platform.invokeMethod("startIdleLocation"),
+                Navigator.pop(context),
+              },
           child: Row(
             children: [
               Container(

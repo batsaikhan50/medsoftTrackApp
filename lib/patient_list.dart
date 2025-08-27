@@ -24,11 +24,17 @@ class PatientListScreenState extends State<PatientListScreen> {
   Map<String, dynamic> sharedPreferencesData = {};
   Timer? _refreshTimer;
 
+  static const platform = MethodChannel(
+    'com.example.new_project_location/location',
+  );
+
   @override
   void initState() {
     super.initState();
     fetchPatients();
     _loadSharedPreferencesData();
+
+    platform.invokeMethod('startIdleLocation');
 
     _refreshTimer = Timer.periodic(Duration(minutes: 1), (timer) {
       refreshPatients();
@@ -48,9 +54,6 @@ class PatientListScreenState extends State<PatientListScreen> {
     super.dispose();
   }
 
-  static const platform = MethodChannel(
-    'com.example.new_project_location/location',
-  );
 
   Future<void> fetchPatients() async {
     final prefs = await SharedPreferences.getInstance();
@@ -314,9 +317,9 @@ class PatientListScreenState extends State<PatientListScreen> {
                                                   'sendRoomIdToAppDelegate',
                                                   {'roomId': roomId},
                                                 );
-                                                await platform.invokeMethod(
-                                                  'startLocationManagerAfterLogin',
-                                                );
+                                                // await platform.invokeMethod(
+                                                //   'startLocationManagerAfterLogin',
+                                                // );
                                                 Navigator.push(
                                                   context,
                                                   MaterialPageRoute(

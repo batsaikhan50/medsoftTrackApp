@@ -16,6 +16,12 @@ import UserNotifications
   var didRequestAlwaysPermission = false
   var lastAuthorizationStatus: CLAuthorizationStatus?
   var currentRoomId: String?
+  enum LocationMode {
+    case activeRoom  // sending location with roomId
+    case idle  // sending location without roomId
+  }
+
+  var currentLocationMode: LocationMode = .idle
 
   override func application(
     _ application: UIApplication,
@@ -37,6 +43,12 @@ import UserNotifications
         self?.sendLocationToAPIByButton(result: result)
       } else if call.method == "startLocationManagerAfterLogin" {
         print("Invoked startLocationManagerAfterLogin")
+        self?.currentLocationMode = .activeRoom
+        self?.startLocationManagerAfterLogin()
+        result(nil)
+      } else if call.method == "startIdleLocation" {
+        print("Invoked startIdleLocation")
+        self?.currentLocationMode = .idle
         self?.startLocationManagerAfterLogin()
         result(nil)
       } else if call.method == "sendXTokenToAppDelegate" {
@@ -354,16 +366,38 @@ import UserNotifications
       return
     }
 
-    guard let roomId = currentRoomId else {
-      NSLog("Error: roomId not available")
-      return
+    var urlString: String
+    var body: [String: Any]
+
+    switch currentLocationMode {
+    case .activeRoom:
+      guard let roomId = currentRoomId else {
+        NSLog("Error: roomId not available")
+        return
+      }
+      urlString = "https://app.medsoft.care/api/location/save/driver"
+      body = [
+        "lat": location.coordinate.latitude,
+        "lng": location.coordinate.longitude,
+        "roomId": roomId,
+      ]
+      NSLog(
+        "Preparing to send ACTIVE location. RoomID: \(roomId), lat: \(location.coordinate.latitude), lng: \(location.coordinate.longitude)"
+      )
+
+    case .idle:
+      urlString =
+        "https://runner-api.medsoft.care/api/gateway/general/post/api/among/ambulance/save/location"
+      body = [
+        "lat": location.coordinate.latitude,
+        "lng": location.coordinate.longitude,
+      ]
+      NSLog(
+        "Preparing to send IDLE location. lat: \(location.coordinate.latitude), lng: \(location.coordinate.longitude)"
+      )
     }
 
-    NSLog(
-      "Preparing to send location. RoomID: \(roomId), lat: \(location.coordinate.latitude), lng: \(location.coordinate.longitude)"
-    )
-
-    guard let url = URL(string: "https://app.medsoft.care/api/location/save/driver") else {
+    guard let url = URL(string: urlString) else {
       NSLog("Invalid URL")
       return
     }
@@ -381,12 +415,6 @@ import UserNotifications
         NSLog("Header: \(key) => \(value)")
       }
     }
-
-    let body: [String: Any] = [
-      "lat": location.coordinate.latitude,
-      "lng": location.coordinate.longitude,
-      "roomId": roomId,
-    ]
 
     do {
       let jsonData = try JSONSerialization.data(withJSONObject: body, options: [])
@@ -419,24 +447,29 @@ import UserNotifications
       }
 
       do {
-        if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
-          let arrivedData = json["data"] as? [String: Any],
-          let arrivedInFifty = arrivedData["arrivedInFifty"] as? Bool
-        {
-          if arrivedInFifty {
+        if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+          NSLog("Response JSON: \(json)")
+
+          // Only activeRoom has arrivedInFifty logic
+          if self.currentLocationMode == .activeRoom,
+            let arrivedData = json["data"] as? [String: Any],
+            let arrivedInFifty = arrivedData["arrivedInFifty"] as? Bool,
+            arrivedInFifty
+          {
             DispatchQueue.main.async {
               self.flutterChannel?.invokeMethod(
-                "arrivedInFiftyReached", arguments: ["arrivedInFifty": arrivedInFifty])
+                "arrivedInFiftyReached",
+                arguments: ["arrivedInFifty": arrivedInFifty]
+              )
             }
+            NSLog("arrivedInFifty in delegate \(arrivedInFifty)")
           }
-
-          NSLog("arrivedInFifty in delegate \(arrivedInFifty)")
         }
 
         if httpResponse.statusCode == 200 {
-          NSLog("Successfully sent location data for roomId \(roomId)")
+          NSLog("Successfully sent location to \(urlString) in mode \(self.currentLocationMode)")
         } else {
-          NSLog("Failed to send location data for roomId \(roomId)")
+          NSLog("Failed to send location to \(urlString) in mode \(self.currentLocationMode)")
         }
       } catch {
         NSLog("Failed to parse JSON: \(error)")
@@ -444,6 +477,102 @@ import UserNotifications
     }
     task.resume()
   }
+
+  // private func sendIdleLocationToAPI(location: CLLocation) {
+  //   guard let token = xToken else {
+  //     NSLog("Error: xToken not available")
+  //     return
+  //   }
+
+  //   guard let hospital = xServer else {
+  //     NSLog("Error: xServer not available")
+  //     return
+  //   }
+
+  //   guard let medsoftToken = xMedsoftToken else {
+  //     NSLog("Error: xMedsoftToken not available")
+  //     return
+  //   }
+
+  //   NSLog(
+  //     "Preparing to send IDLE location. lat: \(location.coordinate.latitude), lng: \(location.coordinate.longitude)"
+  //   )
+
+  //   guard
+  //     let url = URL(
+  //       string:
+  //         "https://runner-api.medsoft.care/api/gateway/general/post/api/among/ambulance/save/location"
+  //     )
+  //   else {
+  //     NSLog("Invalid URL for idle location")
+  //     return
+  //   }
+
+  //   var request = URLRequest(url: url)
+  //   request.httpMethod = "POST"
+  //   request.addValue(token, forHTTPHeaderField: "X-Token")
+  //   request.addValue(hospital, forHTTPHeaderField: "X-Tenant")
+  //   request.addValue(medsoftToken, forHTTPHeaderField: "X-Medsoft-Token")
+  //   request.addValue("Bearer \(medsoftToken)", forHTTPHeaderField: "Authorization")
+  //   request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+
+  //   if let allHeaders = request.allHTTPHeaderFields {
+  //     for (key, value) in allHeaders {
+  //       NSLog("Header: \(key) => \(value)")
+  //     }
+  //   }
+
+  //   let body: [String: Any] = [
+  //     "lat": location.coordinate.latitude,
+  //     "lng": location.coordinate.longitude,
+  //   ]
+
+  //   do {
+  //     let jsonData = try JSONSerialization.data(withJSONObject: body, options: [])
+  //     request.httpBody = jsonData
+
+  //     if let jsonStr = String(data: jsonData, encoding: .utf8) {
+  //       NSLog("Sending IDLE JSON body: \(jsonStr)")
+  //     }
+  //   } catch {
+  //     NSLog("Error encoding JSON body: \(error)")
+  //     return
+  //   }
+
+  //   let task = URLSession.shared.dataTask(with: request) { data, response, error in
+  //     if let error = error {
+  //       NSLog("Error making POST request for idle location: \(error)")
+  //       return
+  //     }
+
+  //     guard let httpResponse = response as? HTTPURLResponse else {
+  //       NSLog("Invalid response")
+  //       return
+  //     }
+
+  //     NSLog("Idle location response status code: \(httpResponse.statusCode)")
+
+  //     guard let data = data else {
+  //       NSLog("No data received for idle location")
+  //       return
+  //     }
+
+  //     do {
+  //       if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+  //         NSLog("Idle location response JSON: \(json)")
+  //       }
+
+  //       if httpResponse.statusCode == 200 {
+  //         NSLog("Successfully sent idle location")
+  //       } else {
+  //         NSLog("Failed to send idle location")
+  //       }
+  //     } catch {
+  //       NSLog("Failed to parse JSON for idle location: \(error)")
+  //     }
+  //   }
+  //   task.resume()
+  // }
 
   func scheduleBackgroundTask() {
     let request = BGProcessingTaskRequest(
@@ -471,7 +600,7 @@ import UserNotifications
     locationManager = CLLocationManager()
     locationManager?.delegate = self
     locationManager?.desiredAccuracy = kCLLocationAccuracyBest
-    locationManager?.distanceFilter = 10
+    locationManager?.distanceFilter = 2
     locationManager?.allowsBackgroundLocationUpdates = true
     locationManager?.showsBackgroundLocationIndicator = false
     locationManager?.requestWhenInUseAuthorization()
