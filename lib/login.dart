@@ -49,6 +49,8 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
     _usernameLoginController.dispose();
     _passwordLoginController.dispose();
     _usernameController.dispose();
+    _passwordController.removeListener(_updatePasswordRules);
+    _passwordCheckController.removeListener(_updatePasswordRules);
     _passwordController.dispose();
     _passwordCheckController.dispose();
     _regNoController.dispose();
@@ -61,8 +63,6 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
     _passwordFocus.dispose();
     _passwordCheckFocus.dispose();
     _scrollController.dispose();
-    _passwordController.removeListener(_updatePasswordRules);
-    _passwordCheckController.removeListener(_updatePasswordRules);
     super.dispose();
   }
 
