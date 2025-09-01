@@ -350,6 +350,16 @@ import UserNotifications
     // }
   }
 
+  func updateDistanceFilter(_ newDistance: Double) {
+    guard let locationManager = self.locationManager else { return }
+
+    // Round to 2 decimals or to whole number if you want
+    let rounded = Double(round(100 * newDistance) / 100)
+
+    locationManager.distanceFilter = rounded
+    NSLog("Updated distanceFilter to \(rounded) meters")
+  }
+
   private func sendLocationToAPI(location: CLLocation) {
     guard let token = xToken else {
       NSLog("Error: xToken not available")
@@ -450,20 +460,33 @@ import UserNotifications
         if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
           NSLog("Response JSON: \(json)")
 
-          // Only activeRoom has arrivedInFifty logic
           if self.currentLocationMode == .activeRoom,
-            let arrivedData = json["data"] as? [String: Any],
-            let arrivedInFifty = arrivedData["arrivedInFifty"] as? Bool,
-            arrivedInFifty
+            let arrivedData = json["data"] as? [String: Any]
           {
-            DispatchQueue.main.async {
-              self.flutterChannel?.invokeMethod(
-                "arrivedInFiftyReached",
-                arguments: ["arrivedInFifty": arrivedInFifty]
-              )
+
+            // Handle arrivedInFifty
+            if let arrivedInFifty = arrivedData["arrivedInFifty"] as? Bool, arrivedInFifty {
+              DispatchQueue.main.async {
+                self.flutterChannel?.invokeMethod(
+                  "arrivedInFiftyReached",
+                  arguments: ["arrivedInFifty": arrivedInFifty]
+                )
+              }
             }
-            NSLog("arrivedInFifty in delegate \(arrivedInFifty)")
+            NSLog("arrivedInFifty in delegate \(arrivedData["arrivedInFifty"])")
+
+            // Handle distance
+            if let distance = arrivedData["distance"] as? Double {
+              let formatted = Double(round(100 * distance) / 100)
+              DispatchQueue.main.async {
+                self.locationManager?.stopUpdatingLocation()
+                self.locationManager?.distanceFilter = formatted
+                self.locationManager?.startUpdatingLocation()
+                NSLog("Updated distanceFilter to \(formatted) meters")
+              }
+            }
           }
+
         }
 
         if httpResponse.statusCode == 200 {
