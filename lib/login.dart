@@ -187,6 +187,22 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
+    _usernameLoginController.addListener(() {
+      setState(() {});
+    });
+
+    _usernameController.addListener(() {
+      setState(() {});
+    });
+
+    _passwordLoginController.addListener(() {
+      setState(() {});
+    });
+
+    _passwordController.addListener(() {
+      setState(() {});
+    });
+
     _passwordController.addListener(_updatePasswordRules);
     _passwordCheckController.addListener(_updatePasswordRules);
     _regNoController.addListener(_validateRegNo);
@@ -695,9 +711,6 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                 ),
                 const SizedBox(height: 20),
 
-                // buildAnimatedToggle(),
-                // const SizedBox(height: 20),
-
                 if (_serverNames.isNotEmpty && _selectedToggleIndex == 0)
                   Container(
                     height: 56,
@@ -744,6 +757,21 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                             underline: const SizedBox.shrink(),
                           ),
                         ),
+                        if (_selectedRole != null)
+                          IconButton(
+                            icon: const Icon(
+                              Icons.clear,
+                              color: Colors.black54,
+                            ),
+                            onPressed: () async {
+                              setState(() {
+                                _selectedRole = null;
+                              });
+                              SharedPreferences prefs =
+                                  await SharedPreferences.getInstance();
+                              await prefs.remove('forgetUrl');
+                            },
+                          ),
                       ],
                     ),
                   ),
@@ -762,6 +790,15 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                     decoration: InputDecoration(
                       labelText: 'Нэвтрэх нэр',
                       prefixIcon: const Icon(Icons.person),
+                      suffixIcon:
+                          _usernameLoginController.text.isNotEmpty
+                              ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  _usernameLoginController.clear();
+                                },
+                              )
+                              : null,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -779,6 +816,15 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                     decoration: InputDecoration(
                       labelText: 'Нэвтрэх нэр',
                       prefixIcon: const Icon(Icons.person),
+                      suffixIcon:
+                          _usernameController.text.isNotEmpty
+                              ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  _usernameController.clear();
+                                },
+                              )
+                              : null,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -799,17 +845,31 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                     decoration: InputDecoration(
                       labelText: 'Нууц үг',
                       prefixIcon: const Icon(Icons.lock),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _isPasswordLoginVisible
-                              ? Icons.visibility
-                              : Icons.visibility_off,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _isPasswordLoginVisible = !_isPasswordLoginVisible;
-                          });
-                        },
+                      suffixIcon: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_passwordLoginController.text.isNotEmpty)
+                            IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _passwordLoginController.clear();
+                                setState(() {});
+                              },
+                            ),
+                          IconButton(
+                            icon: Icon(
+                              _isPasswordLoginVisible
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isPasswordLoginVisible =
+                                    !_isPasswordLoginVisible;
+                              });
+                            },
+                          ),
+                        ],
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -849,34 +909,42 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                     ),
                   ),
 
-                if (_selectedToggleIndex == 1 &&
-                    _passwordController.text.isNotEmpty &&
-                    _passwordRulesStatus.isNotEmpty)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children:
-                        _passwordRulesStatus.entries.map((entry) {
-                          return Row(
-                            children: [
-                              Icon(
-                                entry.value ? Icons.check_circle : Icons.cancel,
-                                color: entry.value ? Colors.green : Colors.red,
-                                size: 18,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  entry.key,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color:
-                                        entry.value ? Colors.green : Colors.red,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          );
-                        }).toList(),
+                if (_selectedToggleIndex == 1)
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: !_isPasswordVisible,
+                    decoration: InputDecoration(
+                      labelText: 'Нууц үг',
+                      prefixIcon: const Icon(Icons.lock),
+                      suffixIcon: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_passwordController.text.isNotEmpty)
+                            IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _passwordController.clear();
+                                setState(() {});
+                              },
+                            ),
+                          IconButton(
+                            icon: Icon(
+                              _isPasswordVisible
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isPasswordVisible = !_isPasswordVisible;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                   ),
 
                 if (_selectedToggleIndex == 1) const SizedBox(height: 20),
