@@ -195,16 +195,14 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
       setState(() {});
     });
 
-    _passwordLoginController.addListener(() {
-      setState(() {});
-    });
-
     _passwordController.addListener(() {
       setState(() {});
+      _updatePasswordRules();
     });
-
-    _passwordController.addListener(_updatePasswordRules);
-    _passwordCheckController.addListener(_updatePasswordRules);
+    _passwordCheckController.addListener(() {
+      setState(() {});
+      _updatePasswordRules();
+    });
     _regNoController.addListener(_validateRegNo);
 
     _dragPosition =
