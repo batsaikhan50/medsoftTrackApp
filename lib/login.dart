@@ -195,10 +195,16 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
       setState(() {});
     });
 
+    _passwordLoginController.addListener(() {
+      setState(() {});
+      _updatePasswordRules();
+    });
+
     _passwordController.addListener(() {
       setState(() {});
       _updatePasswordRules();
     });
+    
     _passwordCheckController.addListener(() {
       setState(() {});
       _updatePasswordRules();
@@ -708,6 +714,8 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                   ),
                 ),
                 const SizedBox(height: 20),
+                // buildAnimatedToggle(),
+                // const SizedBox(height: 20),
 
                 if (_serverNames.isNotEmpty && _selectedToggleIndex == 0)
                   Container(
@@ -877,35 +885,48 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
 
                 if (_selectedToggleIndex == 0) const SizedBox(height: 20),
 
-                if (_selectedToggleIndex == 1)
-                  TextFormField(
-                    controller: _passwordController,
-                    focusNode: _passwordFocus,
-                    textInputAction: TextInputAction.done,
-                    onFieldSubmitted: (_) {
-                      FocusScope.of(context).unfocus();
-                    },
-                    obscureText: !_isPasswordVisible,
-                    decoration: InputDecoration(
-                      labelText: 'Нууц үг',
-                      prefixIcon: const Icon(Icons.lock),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _isPasswordVisible
-                              ? Icons.visibility
-                              : Icons.visibility_off,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _isPasswordVisible = !_isPasswordVisible;
-                          });
-                        },
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
+                // if (_selectedToggleIndex == 1)
+                //   TextFormField(
+                //     controller: _passwordController,
+                //     focusNode: _passwordFocus,
+                //     textInputAction: TextInputAction.done,
+                //     onFieldSubmitted: (_) {
+                //       FocusScope.of(context).unfocus();
+                //     },
+                //     obscureText: !_isPasswordVisible,
+                //     decoration: InputDecoration(
+                //       labelText: 'Нууц үг',
+                //       prefixIcon: const Icon(Icons.lock),
+                //       suffixIcon: Row(
+                //         mainAxisSize: MainAxisSize.min,
+                //         children: [
+                //           if (_passwordController.text.isNotEmpty)
+                //             IconButton(
+                //               icon: const Icon(Icons.clear),
+                //               onPressed: () {
+                //                 _passwordController.clear();
+                //                 setState(() {});
+                //               },
+                //             ),
+                //           IconButton(
+                //             icon: Icon(
+                //               _isPasswordVisible
+                //                   ? Icons.visibility
+                //                   : Icons.visibility_off,
+                //             ),
+                //             onPressed: () {
+                //               setState(() {
+                //                 _isPasswordVisible = !_isPasswordVisible;
+                //               });
+                //             },
+                //           ),
+                //         ],
+                //       ),
+                //       border: OutlineInputBorder(
+                //         borderRadius: BorderRadius.circular(12),
+                //       ),
+                //     ),
+                //   ),
 
                 if (_selectedToggleIndex == 1)
                   TextFormField(
