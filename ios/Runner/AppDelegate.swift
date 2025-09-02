@@ -1,5 +1,4 @@
 import AdSupport
-// import AppTrackingTransparency
 import BackgroundTasks
 import CoreLocation
 import Flutter
@@ -17,19 +16,19 @@ import UserNotifications
   var lastAuthorizationStatus: CLAuthorizationStatus?
   var currentRoomId: String?
   enum LocationMode {
-    case activeRoom  // sending location with roomId
-    case idle  // sending location without roomId
+    case activeRoom
+    case idle
   }
 
   var currentLocationMode: LocationMode = .idle
+
+  private var saveCounter: Int = 0
+  private var lastDistanceFilter: Double = 1
 
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-    //   self.requestTrackingAuthorization()
-    // }
 
     let controller = window?.rootViewController as! FlutterViewController
     flutterChannel = FlutterMethodChannel(
@@ -99,26 +98,6 @@ import UserNotifications
     scheduleBackgroundTask()
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
-
-  // func requestTrackingAuthorization() {
-  //   if #available(iOS 14, *) {
-  //     let idfa = ASIdentifierManager.shared().advertisingIdentifier.uuidString
-  //     print("IDFA: \(idfa)")
-
-  //     ATTrackingManager.requestTrackingAuthorization { status in
-  //       switch status {
-  //       case .authorized:
-  //         NSLog("ATT: Tracking authorized")
-  //       case .denied, .restricted, .notDetermined:
-  //         NSLog("ATT: Tracking denied or restricted")
-  //       @unknown default:
-  //         NSLog("ATT: Unknown tracking status")
-  //       }
-  //     }
-  //   } else {
-  //     NSLog("ATT: Not available on iOS <14")
-  //   }
-  // }
 
   func requestNotificationPermission() {
     UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) {
@@ -197,17 +176,17 @@ import UserNotifications
       NSLog("Authorized Always")
       manager.startUpdatingLocation()
       requestNotificationPermission()
-      didRequestAlwaysPermission = false  // Reset flag
+      didRequestAlwaysPermission = false
 
     case .authorizedWhenInUse:
       Timer.scheduledTimer(withTimeInterval: 5.0, repeats: false) { _ in
-        // Your timed action here
+
         NSLog("Timer fired")
       }
       if didRequestAlwaysPermission && CLLocationManager.authorizationStatus() != .authorizedAlways
       {
         showLocationPermissionDialog()
-        didRequestAlwaysPermission = false  // Reset flag
+        didRequestAlwaysPermission = false
       }
       NSLog("Authorized When In Use")
       manager.startUpdatingLocation()
@@ -345,15 +324,12 @@ import UserNotifications
     if CLLocationManager.authorizationStatus() == .authorizedWhenInUse {
       locationManager?.requestAlwaysAuthorization()
     }
-    // if CLLocationManager.authorizationStatus() == .authorizedWhenInUse {
-    //   showLocationPermissionDialog()
-    // }
+
   }
 
   func updateDistanceFilter(_ newDistance: Double) {
     guard let locationManager = self.locationManager else { return }
 
-    // Round to 2 decimals or to whole number if you want
     let rounded = Double(round(100 * newDistance) / 100)
 
     locationManager.distanceFilter = rounded
@@ -463,8 +439,6 @@ import UserNotifications
           if self.currentLocationMode == .activeRoom,
             let arrivedData = json["data"] as? [String: Any]
           {
-
-            // Handle arrivedInFifty
             if let arrivedInFifty = arrivedData["arrivedInFifty"] as? Bool, arrivedInFifty {
               DispatchQueue.main.async {
                 self.flutterChannel?.invokeMethod(
@@ -475,13 +449,10 @@ import UserNotifications
             }
             NSLog("arrivedInFifty in delegate \(arrivedData["arrivedInFifty"])")
 
-            // Handle distance
             if let distance = arrivedData["distance"] as? Double {
               let formatted = Double(round(100 * distance) / 100)
               DispatchQueue.main.async {
-                self.locationManager?.stopUpdatingLocation()
                 self.locationManager?.distanceFilter = formatted
-                self.locationManager?.startUpdatingLocation()
                 NSLog("Updated distanceFilter to \(formatted) meters")
               }
             }
@@ -490,6 +461,36 @@ import UserNotifications
         }
 
         if httpResponse.statusCode == 200 {
+          self.saveCounter += 1
+          let formatter = DateFormatter()
+          formatter.dateFormat = "HH:mm:ss"
+          let savedTime = formatter.string(from: Date())
+
+          var distanceUpdate: String? = nil
+          if let currentValue = self.locationManager?.distanceFilter {
+
+            NSLog("self.lastDistanceFilter: \(self.lastDistanceFilter)")
+            NSLog("currentValue: \(currentValue)")
+
+            distanceUpdate = String(
+              format: "%.2fm→%.2fm", self.lastDistanceFilter, currentValue
+            )
+            self.lastDistanceFilter = currentValue
+          } else {
+            distanceUpdate = "nil → N/A"
+          }
+
+          DispatchQueue.main.async {
+            self.flutterChannel?.invokeMethod(
+              "activeLocationSaved",
+              arguments: [
+                "saveCounter": self.saveCounter,
+                "savedTime": savedTime,
+                "distanceUpdate": distanceUpdate ?? "n/a",
+              ]
+            )
+          }
+
           NSLog("Successfully sent location to \(urlString) in mode \(self.currentLocationMode)")
         } else {
           NSLog("Failed to send location to \(urlString) in mode \(self.currentLocationMode)")
@@ -500,102 +501,6 @@ import UserNotifications
     }
     task.resume()
   }
-
-  // private func sendIdleLocationToAPI(location: CLLocation) {
-  //   guard let token = xToken else {
-  //     NSLog("Error: xToken not available")
-  //     return
-  //   }
-
-  //   guard let hospital = xServer else {
-  //     NSLog("Error: xServer not available")
-  //     return
-  //   }
-
-  //   guard let medsoftToken = xMedsoftToken else {
-  //     NSLog("Error: xMedsoftToken not available")
-  //     return
-  //   }
-
-  //   NSLog(
-  //     "Preparing to send IDLE location. lat: \(location.coordinate.latitude), lng: \(location.coordinate.longitude)"
-  //   )
-
-  //   guard
-  //     let url = URL(
-  //       string:
-  //         "https://runner-api.medsoft.care/api/gateway/general/post/api/among/ambulance/save/location"
-  //     )
-  //   else {
-  //     NSLog("Invalid URL for idle location")
-  //     return
-  //   }
-
-  //   var request = URLRequest(url: url)
-  //   request.httpMethod = "POST"
-  //   request.addValue(token, forHTTPHeaderField: "X-Token")
-  //   request.addValue(hospital, forHTTPHeaderField: "X-Tenant")
-  //   request.addValue(medsoftToken, forHTTPHeaderField: "X-Medsoft-Token")
-  //   request.addValue("Bearer \(medsoftToken)", forHTTPHeaderField: "Authorization")
-  //   request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-
-  //   if let allHeaders = request.allHTTPHeaderFields {
-  //     for (key, value) in allHeaders {
-  //       NSLog("Header: \(key) => \(value)")
-  //     }
-  //   }
-
-  //   let body: [String: Any] = [
-  //     "lat": location.coordinate.latitude,
-  //     "lng": location.coordinate.longitude,
-  //   ]
-
-  //   do {
-  //     let jsonData = try JSONSerialization.data(withJSONObject: body, options: [])
-  //     request.httpBody = jsonData
-
-  //     if let jsonStr = String(data: jsonData, encoding: .utf8) {
-  //       NSLog("Sending IDLE JSON body: \(jsonStr)")
-  //     }
-  //   } catch {
-  //     NSLog("Error encoding JSON body: \(error)")
-  //     return
-  //   }
-
-  //   let task = URLSession.shared.dataTask(with: request) { data, response, error in
-  //     if let error = error {
-  //       NSLog("Error making POST request for idle location: \(error)")
-  //       return
-  //     }
-
-  //     guard let httpResponse = response as? HTTPURLResponse else {
-  //       NSLog("Invalid response")
-  //       return
-  //     }
-
-  //     NSLog("Idle location response status code: \(httpResponse.statusCode)")
-
-  //     guard let data = data else {
-  //       NSLog("No data received for idle location")
-  //       return
-  //     }
-
-  //     do {
-  //       if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
-  //         NSLog("Idle location response JSON: \(json)")
-  //       }
-
-  //       if httpResponse.statusCode == 200 {
-  //         NSLog("Successfully sent idle location")
-  //       } else {
-  //         NSLog("Failed to send idle location")
-  //       }
-  //     } catch {
-  //       NSLog("Failed to parse JSON for idle location: \(error)")
-  //     }
-  //   }
-  //   task.resume()
-  // }
 
   func scheduleBackgroundTask() {
     let request = BGProcessingTaskRequest(
@@ -622,11 +527,14 @@ import UserNotifications
   func startLocationManagerAfterLogin() {
     locationManager = CLLocationManager()
     locationManager?.delegate = self
-    locationManager?.desiredAccuracy = kCLLocationAccuracyBest
-    locationManager?.distanceFilter = 2
+    locationManager?.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
+    locationManager?.distanceFilter = 10
     locationManager?.allowsBackgroundLocationUpdates = true
     locationManager?.showsBackgroundLocationIndicator = false
     locationManager?.requestWhenInUseAuthorization()
+
+    locationManager?.stopUpdatingLocation()
+    locationManager?.startUpdatingLocation()
   }
 
   func stopLocationUpdates() {

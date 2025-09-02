@@ -54,7 +54,6 @@ class PatientListScreenState extends State<PatientListScreen> {
     super.dispose();
   }
 
-
   Future<void> fetchPatients() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('X-Medsoft-Token') ?? '';
@@ -317,9 +316,6 @@ class PatientListScreenState extends State<PatientListScreen> {
                                                   'sendRoomIdToAppDelegate',
                                                   {'roomId': roomId},
                                                 );
-                                                // await platform.invokeMethod(
-                                                //   'startLocationManagerAfterLogin',
-                                                // );
                                                 Navigator.push(
                                                   context,
                                                   MaterialPageRoute(
@@ -350,33 +346,14 @@ class PatientListScreenState extends State<PatientListScreen> {
                                             }
                                           }
                                           : null,
-
-                                  // child: Row(
-                                  //   mainAxisAlignment: MainAxisAlignment.center,
-                                  //   children: [
-                                  //     const Text("Байршил"),
-                                  //     if (arrived) ...[
-                                  //       const SizedBox(width: 6),
-                                  //       const Icon(
-                                  //         Icons.check,
-                                  //         color: Colors.green,
-                                  //         size: 18,
-                                  //       ),
-                                  //     ],
-                                  //   ],
-                                  // ),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Expanded(
                                         child: Text(
                                           "Байршил",
-                                          overflow:
-                                              TextOverflow
-                                                  .ellipsis, // prevents overflow
-                                          textAlign:
-                                              TextAlign
-                                                  .center, // keeps it centered inside Expanded
+                                          overflow: TextOverflow.ellipsis,
+                                          textAlign: TextAlign.center,
                                         ),
                                       ),
                                       if (arrived) ...[

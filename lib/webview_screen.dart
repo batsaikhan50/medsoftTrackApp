@@ -32,10 +32,13 @@ class _WebViewScreenState extends State<WebViewScreen> {
   static const platform = MethodChannel(
     'com.example.new_project_location/location',
   );
+  List<String> activeLocationLogs = [];
 
   @override
   void initState() {
     super.initState();
+
+    platform.invokeMethod('startLocationManagerAfterLogin');
 
     _controller =
         WebViewController()
@@ -53,8 +56,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
         },
       ),
     );
-
-    platform.invokeMethod('startLocationManagerAfterLogin');
 
     platform.setMethodCallHandler((call) async {
       if (call.method == 'arrivedInFiftyReached') {
@@ -77,8 +78,31 @@ class _WebViewScreenState extends State<WebViewScreen> {
             duration: Duration(seconds: 2),
           ),
         );
-      } else {
-        debugPrint("not arrivedInFiftyReached");
+      }
+      if (call.method == 'activeLocationSaved') {
+        debugPrint("activeLocationSaved_1: ${call.arguments?['saveCounter']}");
+        debugPrint("activeLocationSaved_2: ${call.arguments?['savedTime']}");
+        debugPrint(
+          "activeLocationSaved_3: ${call.arguments?['distanceUpdate']}",
+        );
+
+        final saveCounter = call.arguments?['saveCounter'];
+        final savedTime = call.arguments?['savedTime'];
+        final distanceUpdate = call.arguments?['distanceUpdate'];
+
+        final logEntry = "($saveCounter, $savedTime, $distanceUpdate)";
+
+        setState(() {
+          activeLocationLogs.add(logEntry);
+
+          if (activeLocationLogs.length > 5) {
+            activeLocationLogs.removeAt(0);
+          }
+        });
+
+        for (final log in activeLocationLogs) {
+          debugPrint(log);
+        }
       }
     });
   }
@@ -246,6 +270,37 @@ class _WebViewScreenState extends State<WebViewScreen> {
               ? Stack(
                 children: [
                   WebViewWidget(controller: _controller),
+                  Positioned(
+                    bottom: 120,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: Container(
+                        width: MediaQuery.of(context).size.width * 0.7,
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children:
+                              activeLocationLogs
+                                  .map(
+                                    (log) => Text(
+                                      log,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 15,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  )
+                                  .toList(),
+                        ),
+                      ),
+                    ),
+                  ),
 
                   Positioned(
                     top: 16,
