@@ -276,7 +276,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                     right: 0,
                     child: Center(
                       child: Container(
-                        width: MediaQuery.of(context).size.width * 0.7,
+                        width: MediaQuery.of(context).size.width * 1,
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: Colors.black.withOpacity(0.6),

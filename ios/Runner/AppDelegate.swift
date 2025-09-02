@@ -431,14 +431,18 @@ import UserNotifications
         NSLog("No data received")
         return
       }
+      var limitText = "n/a"  // default
 
       do {
         if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
           NSLog("Response JSON: \(json)")
-
           if self.currentLocationMode == .activeRoom,
             let arrivedData = json["data"] as? [String: Any]
           {
+
+            if let maxLimit = arrivedData["maxLimit"] {
+              limitText = "limit: \(maxLimit)"
+            }
             if let arrivedInFifty = arrivedData["arrivedInFifty"] as? Bool, arrivedInFifty {
               DispatchQueue.main.async {
                 self.flutterChannel?.invokeMethod(
@@ -479,12 +483,11 @@ import UserNotifications
           } else {
             distanceUpdate = "nil → N/A"
           }
-
           DispatchQueue.main.async {
             self.flutterChannel?.invokeMethod(
               "activeLocationSaved",
               arguments: [
-                "saveCounter": self.saveCounter,
+                "saveCounter": "\(self.saveCounter), \(limitText)",
                 "savedTime": savedTime,
                 "distanceUpdate": distanceUpdate ?? "n/a",
               ]
