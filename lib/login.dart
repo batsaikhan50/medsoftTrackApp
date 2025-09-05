@@ -131,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _fetchServerData() async {
-    const url = 'https://runner-api.medsoft.care/api/gateway/servers';
+    const url = '${Constants.runnerUrl}/gateway/servers';
     final headers = {'X-Token': Constants.xToken};
 
     try {
@@ -306,7 +306,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
 
     try {
       final response = await http.post(
-        Uri.parse('https://app.medsoft.care/api/auth/signup'),
+        Uri.parse('${Constants.appUrl}/auth/signup'),
         headers: headers,
         body: json.encode(body),
       );
@@ -392,8 +392,8 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
       final response = await http.post(
         Uri.parse(
           _selectedRole?['name'] == 'Citizen'
-              ? 'https://app.medsoft.care/api/auth/login'
-              : 'https://runner-api.medsoft.care/api/gateway/auth',
+              ? '${Constants.appUrl}/auth/login'
+              : '${Constants.runnerUrl}/gateway/auth',
         ),
         headers: headers,
         body: json.encode(body),

@@ -141,7 +141,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
       final token = prefs.getString('X-Medsoft-Token') ?? '';
       final server = prefs.getString('X-Tenant') ?? '';
 
-      final uri = Uri.parse('https://app.medsoft.care/api/room/arrived?id=$id');
+      final uri = Uri.parse('${Constants.appUrl}/room/arrived?id=$id');
 
       final response = await http.get(
         uri,

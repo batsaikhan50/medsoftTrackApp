@@ -59,7 +59,7 @@ class PatientListScreenState extends State<PatientListScreen> {
     final token = prefs.getString('X-Medsoft-Token') ?? '';
     final server = prefs.getString('X-Tenant') ?? '';
 
-    final uri = Uri.parse('https://app.medsoft.care/api/room/get/driver');
+    final uri = Uri.parse('${Constants.appUrl}/room/get/driver');
 
     final response = await http.get(
       uri,
@@ -199,7 +199,7 @@ class PatientListScreenState extends State<PatientListScreen> {
                                         prefs.getString('X-Tenant') ?? '';
 
                                     final uri = Uri.parse(
-                                      'https://runner-api.medsoft.care/api/gateway/general/get/api/inpatient/ambulance/sendToMedsoftApp?roomId=$roomIdNum&patientPhone=$phone',
+                                      '${Constants.runnerUrl}/gateway/general/get/api/inpatient/ambulance/sendToMedsoftApp?roomId=$roomIdNum&patientPhone=$phone',
                                     );
 
                                     try {
