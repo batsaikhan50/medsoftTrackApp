@@ -204,7 +204,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
       setState(() {});
       _updatePasswordRules();
     });
-    
+
     _passwordCheckController.addListener(() {
       setState(() {});
       _updatePasswordRules();
@@ -459,7 +459,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
 
     Set<String> allKeys = prefs.getKeys();
     for (String key in allKeys) {
-      if (key == 'isLoggedIn') {
+      if (key == 'isLoggedIn' || key == 'arrivedInFifty') {
         data[key] = prefs.getBool(key);
       } else {
         data[key] = prefs.getString(key) ?? 'null';
@@ -714,9 +714,9 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                   ),
                 ),
                 const SizedBox(height: 20),
+
                 // buildAnimatedToggle(),
                 // const SizedBox(height: 20),
-
                 if (_serverNames.isNotEmpty && _selectedToggleIndex == 0)
                   Container(
                     height: 56,
@@ -927,7 +927,6 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                 //       ),
                 //     ),
                 //   ),
-
                 if (_selectedToggleIndex == 1)
                   TextFormField(
                     controller: _passwordController,
