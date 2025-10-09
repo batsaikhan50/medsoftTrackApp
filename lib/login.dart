@@ -143,8 +143,8 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
               List<Map<String, String>>.from(
                 data['data'].map<Map<String, String>>((server) {
                   return {
-                    'name': server['name'].toString(),
-                    'url': server['url'].toString(),
+                    'name': server['fullName'].toString(),
+                    'domain': server['domain'].toString(),
                   };
                 }),
               );
@@ -319,10 +319,13 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
         if (data['success'] == true) {
           SharedPreferences prefs = await SharedPreferences.getInstance();
 
-          await prefs.setBool('isLoggedIn', false);
+          await prefs.remove('isLoggedIn');
           await prefs.remove('X-Tenant');
           await prefs.remove('X-Medsoft-Token');
           await prefs.remove('Username');
+          await prefs.remove('scannedToken');
+          await prefs.remove('tenantDomain');
+          await prefs.remove('forgetUrl');
 
           setState(() {
             _selectedToggleIndex = 0;
@@ -604,52 +607,54 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
   }
 
   KeyboardActionsConfig _buildKeyboardActionsConfig(BuildContext context) {
+    const Color iosToolbarColor = Color(0x00D8D7DE);
+
     return KeyboardActionsConfig(
       keyboardActionsPlatform: KeyboardActionsPlatform.ALL,
       nextFocus: true,
-      keyboardBarColor: Colors.grey[200],
+      keyboardBarColor: iosToolbarColor,
       actions: [
         if (_selectedToggleIndex == 0)
           KeyboardActionsItem(
             focusNode: _usernameLoginFocus,
             displayArrows: true,
-            onTapAction: () => _scrollIntoView(_usernameLoginFocus),
+            displayDoneButton: false,
           ),
         KeyboardActionsItem(
           focusNode: _passwordLoginFocus,
           displayArrows: true,
-          onTapAction: () => _scrollIntoView(_passwordLoginFocus),
+          displayDoneButton: false,
         ),
         if (_selectedToggleIndex == 1) ...[
           KeyboardActionsItem(
             focusNode: _usernameFocus,
             displayArrows: true,
-            onTapAction: () => _scrollIntoView(_usernameFocus),
+            displayDoneButton: false,
           ),
           KeyboardActionsItem(
             focusNode: _passwordFocus,
             displayArrows: true,
-            onTapAction: () => _scrollIntoView(_passwordFocus),
+            displayDoneButton: false,
           ),
           KeyboardActionsItem(
             focusNode: _passwordCheckFocus,
             displayArrows: true,
-            onTapAction: () => _scrollIntoView(_passwordCheckFocus),
+            displayDoneButton: false,
           ),
           KeyboardActionsItem(
             focusNode: _regNoFocus,
             displayArrows: true,
-            onTapAction: () => _scrollIntoView(_regNoFocus),
+            displayDoneButton: false,
           ),
           KeyboardActionsItem(
             focusNode: _lastnameFocus,
             displayArrows: true,
-            onTapAction: () => _scrollIntoView(_lastnameFocus),
+            displayDoneButton: false,
           ),
           KeyboardActionsItem(
             focusNode: _firstnameFocus,
             displayArrows: true,
-            onTapAction: () => _scrollIntoView(_firstnameFocus),
+            displayDoneButton: false,
           ),
         ],
       ],
@@ -747,7 +752,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                                     await SharedPreferences.getInstance();
                                 await prefs.setString(
                                   'forgetUrl',
-                                  newValue['url'] ?? '',
+                                  newValue['domain'] ?? '',
                                 );
                               }
                             },
@@ -1095,14 +1100,14 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                     ),
                   ),
 
-                if (_selectedToggleIndex == 1)
+                if (_selectedToggleIndex == 0)
                   Align(
                     alignment: Alignment.centerRight,
                     child: GestureDetector(
                       onTap: () async {
                         SharedPreferences prefs =
                             await SharedPreferences.getInstance();
-                        String? baseUrl = prefs.getString('forgetUrl');
+                        String? baseUrl = prefs.getString('tenantDomain');
                         String? hospital = _selectedRole?['name'];
 
                         if (baseUrl != null &&
@@ -1115,7 +1120,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                                   (context) => WebViewScreen(
                                     url:
                                         '$baseUrl/forget?callback=medsofttrack://callback',
-                                    title: hospital,
+                                    title: 'Нэвтрэх | ${hospital}',
                                   ),
                             ),
                           );
