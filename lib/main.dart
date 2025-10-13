@@ -20,6 +20,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
@@ -109,7 +110,6 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     _loadSharedPreferencesData();
     _sendXServerToAppDelegate();
     _sendXMedsoftTokenToAppDelegate();
-    // _startLocationTracking();
 
     _animationController = AnimationController(
       vsync: this,
@@ -356,7 +356,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         child: Column(
           children: <Widget>[
             DrawerHeader(
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Color.fromARGB(255, 236, 169, 175),
               ),
               child: Center(
@@ -367,27 +367,39 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                 ),
               ),
             ),
-            ListTile(
-              title: Center(
-                child: Text(
-                  username ?? 'Guest',
-                  style: TextStyle(fontSize: 20),
-                ),
+
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: <Widget>[
+                  ListTile(
+                    title: Center(
+                      child: Text(
+                        sharedPreferencesData['Username'] ?? 'Зочин',
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                    ),
+                  ),
+                  const Divider(),
+
+                  ListTile(
+                    leading: Icon(Icons.info_outline, color: Colors.blueAccent),
+                    title: Text(
+                      'Хэрэглэх заавар',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => GuideScreen()),
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
-            const Divider(),
-            ListTile(
-              leading: Icon(Icons.info_outline, color: Colors.blueAccent),
-              title: Text('Хэрэглэх заавар', style: TextStyle(fontSize: 18)),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => GuideScreen()),
-                );
-              },
-            ),
-            Spacer(),
+
             Container(
               margin: const EdgeInsets.all(10),
               decoration: BoxDecoration(
@@ -395,8 +407,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: ListTile(
-                title: Center(
-                  child: const Text(
+                title: const Center(
+                  child: Text(
                     'Гарах',
                     style: TextStyle(
                       color: Colors.white,
@@ -410,7 +422,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
                 },
               ),
             ),
-            SizedBox(height: 50),
+
+            const SizedBox(height: 10),
           ],
         ),
       ),

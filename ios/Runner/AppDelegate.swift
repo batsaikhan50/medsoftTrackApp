@@ -175,7 +175,14 @@ import UserNotifications
     case .authorizedAlways:
       NSLog("Authorized Always")
       manager.startUpdatingLocation()
-      requestNotificationPermission()
+
+      let isLoggedIn = UserDefaults.standard.bool(forKey: "isLoggedIn")
+      if isLoggedIn {
+        requestNotificationPermission()
+      } else {
+        NSLog("User not logged in, skipping notification permission request")
+      }
+
       didRequestAlwaysPermission = false
 
     case .authorizedWhenInUse:
@@ -210,7 +217,12 @@ import UserNotifications
       DispatchQueue.main.async {
         switch settings.authorizationStatus {
         case .notDetermined:
-          self.requestNotificationPermission()
+          let isLoggedIn = UserDefaults.standard.bool(forKey: "isLoggedIn")
+          if isLoggedIn {
+            self.requestNotificationPermission()
+          } else {
+            NSLog("User not logged in, skipping notification permission prompt")
+          }
 
         case .denied:
           self.showNotificationPermissionDialog()
@@ -431,7 +443,7 @@ import UserNotifications
         NSLog("No data received")
         return
       }
-      var limitText = "n/a"  // default
+      var limitText = "n/a"
 
       do {
         if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
