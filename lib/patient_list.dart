@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:http/http.dart' as http;
 import 'package:new_project_location/login.dart';
@@ -24,7 +25,9 @@ class PatientListScreenState extends State<PatientListScreen> {
   Map<String, dynamic> sharedPreferencesData = {};
   Timer? _refreshTimer;
   final Set<int> _expandedTiles = {};
-
+  static const platform = MethodChannel(
+    'com.example.new_project_location/location',
+  );
   @override
   void initState() {
     super.initState();
@@ -196,6 +199,7 @@ class PatientListScreenState extends State<PatientListScreen> {
                       final patientName = patientData['patientName'] ?? '';
                       final patientRegNo = patientData['patientRegNo'] ?? '';
                       final patientGender = patientData['patientGender'] ?? '';
+                      final patientSent = patient['patientSent'] ?? false;
 
                       final reportedCitizen = getValue('reportedCitizen');
                       final received = getValue('received');
@@ -265,27 +269,143 @@ class PatientListScreenState extends State<PatientListScreen> {
                                             : MainAxisAlignment.start,
                                     children: [
                                       Flexible(
-                                        flex: 4,
+                                        flex: 6,
                                         child: SizedBox(
                                           height: 48,
                                           child: ElevatedButton(
-                                            onPressed: () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder:
-                                                      (
-                                                        context,
-                                                      ) => WebViewScreen(
-                                                        url:
-                                                            '${tenantDomain}/ambulanceApp/${roomId}/${xMedsoftToken}',
-                                                        title: 'Форм тест',
-                                                      ),
-                                                ),
+                                            onPressed: () async {
+                                              final roomId = patient['roomId'];
+                                              final roomIdNum = patient['_id'];
+                                              final phone =
+                                                  patient['patientPhone'];
+
+                                              if (roomId == null ||
+                                                  phone == null) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Room ID эсвэл утасны дугаар олдсонгүй',
+                                                    ),
+                                                    duration: Duration(
+                                                      seconds: 1,
+                                                    ),
+                                                  ),
+                                                );
+                                                return;
+                                              }
+
+                                              final prefs =
+                                                  await SharedPreferences.getInstance();
+                                              final token =
+                                                  prefs.getString(
+                                                    'X-Medsoft-Token',
+                                                  ) ??
+                                                  '';
+                                              final server =
+                                                  prefs.getString('X-Tenant') ??
+                                                  '';
+
+                                              final uri = Uri.parse(
+                                                '${Constants.runnerUrl}/gateway/general/get/api/inpatient/ambulance/sendToMedsoftApp?roomId=$roomIdNum&patientPhone=$phone',
                                               );
+
+                                              try {
+                                                final response = await http.get(
+                                                  uri,
+                                                  headers: {
+                                                    'X-Medsoft-Token': token,
+                                                    'X-Tenant':
+                                                        server == 'Citizen'
+                                                            ? 'ui.medsoft.care'
+                                                            : server,
+                                                    'X-Token': Constants.xToken,
+                                                  },
+                                                );
+
+                                                if (response.statusCode ==
+                                                    200) {
+                                                  final json = jsonDecode(
+                                                    response.body,
+                                                  );
+                                                  if (json['success'] == true) {
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      const SnackBar(
+                                                        content: Text(
+                                                          'Мессеж амжилттай илгээгдлээ',
+                                                        ),
+                                                        backgroundColor:
+                                                            Colors.green,
+                                                        duration: Duration(
+                                                          seconds: 1,
+                                                        ),
+                                                      ),
+                                                    );
+                                                    refreshPatients();
+                                                  } else {
+                                                    ScaffoldMessenger.of(
+                                                      context,
+                                                    ).showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          json['message'] ??
+                                                              'Алдаа гарлаа',
+                                                        ),
+                                                        backgroundColor:
+                                                            Colors.red,
+                                                        duration:
+                                                            const Duration(
+                                                              seconds: 1,
+                                                            ),
+                                                      ),
+                                                    );
+                                                    if (response.statusCode ==
+                                                            401 ||
+                                                        response.statusCode ==
+                                                            403) {
+                                                      _logOut();
+                                                    }
+                                                  }
+                                                } else {
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        'HTTP алдаа: ${response.statusCode}',
+                                                      ),
+                                                      backgroundColor:
+                                                          Colors.red,
+                                                      duration: const Duration(
+                                                        seconds: 1,
+                                                      ),
+                                                    ),
+                                                  );
+                                                }
+                                              } catch (e) {
+                                                debugPrint(
+                                                  'Send SMS error: $e',
+                                                );
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      'Сүлжээний алдаа: $e',
+                                                    ),
+                                                    backgroundColor: Colors.red,
+                                                    duration: const Duration(
+                                                      seconds: 1,
+                                                    ),
+                                                  ),
+                                                );
+                                              }
                                             },
                                             child: const Text(
-                                              "Үзлэг",
+                                              "Мессеж илгээх",
                                               textAlign: TextAlign.center,
                                             ),
                                           ),
@@ -293,13 +413,75 @@ class PatientListScreenState extends State<PatientListScreen> {
                                       ),
                                       const SizedBox(width: 8),
                                       Flexible(
-                                        flex: 6,
+                                        flex: 4,
                                         child: SizedBox(
                                           height: 48,
                                           child: ElevatedButton(
-                                            onPressed: arrived ? () {} : null,
+                                            onPressed:
+                                                patientSent
+                                                    ? () async {
+                                                      final url =
+                                                          patient['url'];
+                                                      final title =
+                                                          "Дуудлагын жагсаалт";
+                                                      final roomId =
+                                                          patient['roomId'];
+                                                      final roomIdNum =
+                                                          patient['_id'];
+                                                      if (url != null &&
+                                                          url
+                                                              .toString()
+                                                              .startsWith(
+                                                                'http',
+                                                              )) {
+                                                        try {
+                                                          await platform
+                                                              .invokeMethod(
+                                                                'sendRoomIdToAppDelegate',
+                                                                {
+                                                                  'roomId':
+                                                                      roomId,
+                                                                },
+                                                              );
+                                                          Navigator.push(
+                                                            context,
+                                                            MaterialPageRoute(
+                                                              builder:
+                                                                  (
+                                                                    context,
+                                                                  ) => WebViewScreen(
+                                                                    url: url,
+                                                                    title:
+                                                                        title,
+                                                                    roomId:
+                                                                        roomId,
+                                                                    roomIdNum:
+                                                                        roomIdNum,
+                                                                  ),
+                                                            ),
+                                                          );
+                                                        } on PlatformException catch (
+                                                          e
+                                                        ) {
+                                                          debugPrint(
+                                                            "Failed to start location: $e",
+                                                          );
+                                                        }
+                                                      } else {
+                                                        ScaffoldMessenger.of(
+                                                          context,
+                                                        ).showSnackBar(
+                                                          const SnackBar(
+                                                            content: Text(
+                                                              "Invalid URL",
+                                                            ),
+                                                          ),
+                                                        );
+                                                      }
+                                                    }
+                                                    : null,
                                             child: const Text(
-                                              "Баталгаажуулах",
+                                              "Байршил",
                                               textAlign: TextAlign.center,
                                             ),
                                           ),
