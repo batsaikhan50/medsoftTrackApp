@@ -25,9 +25,7 @@ class PatientListScreenState extends State<PatientListScreen> {
   Map<String, dynamic> sharedPreferencesData = {};
   Timer? _refreshTimer;
   final Set<int> _expandedTiles = {};
-  static const platform = MethodChannel(
-    'com.example.new_project_location/location',
-  );
+  static const platform = MethodChannel('com.example.new_project_location/location');
   @override
   void initState() {
     super.initState();
@@ -98,10 +96,7 @@ class PatientListScreenState extends State<PatientListScreen> {
     await prefs.remove('tenantDomain');
     await prefs.remove('forgetUrl');
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => LoginScreen()),
-    );
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginScreen()));
   }
 
   Future<void> _loadSharedPreferencesData() async {
@@ -156,6 +151,149 @@ class PatientListScreenState extends State<PatientListScreen> {
     return '';
   }
 
+  // --- NEW HELPER METHOD 3: Send Message Button ---
+  Widget _buildSendMessageButton(BuildContext context, dynamic patient, bool isTablet) {
+    final roomId = patient['roomId'];
+    final roomIdNum = patient['_id'];
+    final phone = patient['patientPhone'];
+
+    final buttonLabel = "Мессеж илгээх";
+
+    return SizedBox(
+      height: 48,
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.message, size: 18),
+        label: Text(
+          buttonLabel,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: isTablet ? 16 : 12),
+        ),
+        onPressed: () async {
+          if (roomId == null || phone == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Room ID эсвэл утасны дугаар олдсонгүй'),
+                duration: Duration(seconds: 1),
+              ),
+            );
+            return;
+          }
+
+          final prefs = await SharedPreferences.getInstance();
+          final token = prefs.getString('X-Medsoft-Token') ?? '';
+          final server = prefs.getString('X-Tenant') ?? '';
+
+          final uri = Uri.parse(
+            '${Constants.runnerUrl}/gateway/general/get/api/inpatient/ambulance/sendToMedsoftApp?roomId=$roomIdNum&patientPhone=$phone',
+          );
+
+          try {
+            final response = await http.get(
+              uri,
+              headers: {
+                'X-Medsoft-Token': token,
+                'X-Tenant': server == 'Citizen' ? 'ui.medsoft.care' : server,
+                'X-Token': Constants.xToken,
+              },
+            );
+
+            if (response.statusCode == 200) {
+              final json = jsonDecode(response.body);
+              if (json['success'] == true) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Мессеж амжилттай илгээгдлээ'),
+                    backgroundColor: Colors.green,
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+                refreshPatients();
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(json['message'] ?? 'Алдаа гарлаа'),
+                    backgroundColor: Colors.red,
+                    duration: const Duration(seconds: 1),
+                  ),
+                );
+                if (response.statusCode == 401 || response.statusCode == 403) {
+                  _logOut();
+                }
+              }
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('HTTP алдаа: ${response.statusCode}'),
+                  backgroundColor: Colors.red,
+                  duration: const Duration(seconds: 1),
+                ),
+              );
+            }
+          } catch (e) {
+            debugPrint('Send SMS error: $e');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Сүлжээний алдаа: $e'),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 1),
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  // --- NEW HELPER METHOD 4: Location Button ---
+  Widget _buildLocationButton(BuildContext context, dynamic patient, bool isTablet) {
+    final patientSent = patient['patientSent'] ?? false;
+    final url = patient['url'];
+    final title = "Дуудлагын жагсаалт";
+    final roomId = patient['roomId'];
+    final roomIdNum = patient['_id'];
+    final buttonLabel = "Байршил";
+
+    return SizedBox(
+      height: 48,
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.location_pin, size: 18),
+        label: Text(
+          buttonLabel,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: isTablet ? 16 : 12),
+        ),
+        onPressed:
+            patientSent
+                ? () async {
+                  if (url != null && url.toString().startsWith('http')) {
+                    try {
+                      await platform.invokeMethod('sendRoomIdToAppDelegate', {'roomId': roomId});
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => WebViewScreen(
+                                url: url,
+                                title: title,
+                                roomId: roomId,
+                                roomIdNum: roomIdNum,
+                              ),
+                        ),
+                      );
+                    } on PlatformException catch (e) {
+                      debugPrint("Failed to start location: $e");
+                    }
+                  } else {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(const SnackBar(content: Text("Invalid URL")));
+                  }
+                }
+                : null,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<SharedPreferences>(
@@ -189,8 +327,7 @@ class PatientListScreenState extends State<PatientListScreen> {
                       final values = patientData['values'] ?? {};
 
                       String getValue(String key) {
-                        if (values[key] != null &&
-                            values[key]['value'] != null) {
+                        if (values[key] != null && values[key]['value'] != null) {
                           return values[key]['value'] as String;
                         }
                         return '';
@@ -212,351 +349,326 @@ class PatientListScreenState extends State<PatientListScreen> {
 
                       final isExpanded = _expandedTiles.contains(index);
 
-                      return Card(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 3,
-                        margin: const EdgeInsets.symmetric(vertical: 6.0),
-                        child: Container(
-                          child: Theme(
-                            data: Theme.of(
-                              context,
-                            ).copyWith(dividerColor: Colors.transparent),
-                            child: ExpansionTile(
-                              key: PageStorageKey(index),
-                              initiallyExpanded: false,
-                              tilePadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 1,
-                              ),
-                              onExpansionChanged: (expanded) {
-                                setState(() {
-                                  if (expanded) {
-                                    _expandedTiles.add(index);
-                                  } else {
-                                    _expandedTiles.remove(index);
-                                  }
-                                });
-                              },
-                              title: Text(
-                                patientPhone,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (!isExpanded && address.isNotEmpty)
-                                    Text(
-                                      address,
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
+                      // --- DYNAMIC LAYOUT VARIABLES ---
+                      final screenWidth = MediaQuery.of(context).size.width;
+                      final isNarrowScreen = screenWidth < 500;
+                      final isTablet = screenWidth >= 600; // Used for new button font sizing
+
+                      final mainAxisAlignment =
+                          isNarrowScreen ? MainAxisAlignment.start : MainAxisAlignment.center;
+                      // --------------------------------
+
+                      return Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            maxWidth: 700, // Max width for centering on large screens
+                          ),
+                          child: Card(
+                            color: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 3,
+                            margin: const EdgeInsets.symmetric(vertical: 6.0),
+                            child: Container(
+                              child: Theme(
+                                data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                                child: ExpansionTile(
+                                  key: PageStorageKey(index),
+                                  initiallyExpanded: false,
+                                  tilePadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 1,
+                                  ),
+                                  onExpansionChanged: (expanded) {
+                                    setState(() {
+                                      if (expanded) {
+                                        _expandedTiles.add(index);
+                                      } else {
+                                        _expandedTiles.remove(index);
+                                      }
+                                    });
+                                  },
+                                  title: Text(
+                                    patientPhone,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
                                     ),
-                                  if (!isExpanded && receivedShort.isNotEmpty)
-                                    Text(
-                                      receivedShort,
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                    ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    mainAxisAlignment:
-                                        isTablet
-                                            ? MainAxisAlignment.end
-                                            : MainAxisAlignment.start,
+                                  ),
+                                  subtitle: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Flexible(
-                                        flex: 6,
-                                        child: SizedBox(
-                                          height: 48,
-                                          child: ElevatedButton(
-                                            onPressed: () async {
-                                              final roomId = patient['roomId'];
-                                              final roomIdNum = patient['_id'];
-                                              final phone =
-                                                  patient['patientPhone'];
-
-                                              if (roomId == null ||
-                                                  phone == null) {
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text(
-                                                      'Room ID эсвэл утасны дугаар олдсонгүй',
-                                                    ),
-                                                    duration: Duration(
-                                                      seconds: 1,
-                                                    ),
-                                                  ),
-                                                );
-                                                return;
-                                              }
-
-                                              final prefs =
-                                                  await SharedPreferences.getInstance();
-                                              final token =
-                                                  prefs.getString(
-                                                    'X-Medsoft-Token',
-                                                  ) ??
-                                                  '';
-                                              final server =
-                                                  prefs.getString('X-Tenant') ??
-                                                  '';
-
-                                              final uri = Uri.parse(
-                                                '${Constants.runnerUrl}/gateway/general/get/api/inpatient/ambulance/sendToMedsoftApp?roomId=$roomIdNum&patientPhone=$phone',
-                                              );
-
-                                              try {
-                                                final response = await http.get(
-                                                  uri,
-                                                  headers: {
-                                                    'X-Medsoft-Token': token,
-                                                    'X-Tenant':
-                                                        server == 'Citizen'
-                                                            ? 'ui.medsoft.care'
-                                                            : server,
-                                                    'X-Token': Constants.xToken,
-                                                  },
-                                                );
-
-                                                if (response.statusCode ==
-                                                    200) {
-                                                  final json = jsonDecode(
-                                                    response.body,
-                                                  );
-                                                  if (json['success'] == true) {
-                                                    ScaffoldMessenger.of(
-                                                      context,
-                                                    ).showSnackBar(
-                                                      const SnackBar(
-                                                        content: Text(
-                                                          'Мессеж амжилттай илгээгдлээ',
-                                                        ),
-                                                        backgroundColor:
-                                                            Colors.green,
-                                                        duration: Duration(
-                                                          seconds: 1,
-                                                        ),
-                                                      ),
-                                                    );
-                                                    refreshPatients();
-                                                  } else {
-                                                    ScaffoldMessenger.of(
-                                                      context,
-                                                    ).showSnackBar(
-                                                      SnackBar(
-                                                        content: Text(
-                                                          json['message'] ??
-                                                              'Алдаа гарлаа',
-                                                        ),
-                                                        backgroundColor:
-                                                            Colors.red,
-                                                        duration:
-                                                            const Duration(
-                                                              seconds: 1,
-                                                            ),
-                                                      ),
-                                                    );
-                                                    if (response.statusCode ==
-                                                            401 ||
-                                                        response.statusCode ==
-                                                            403) {
-                                                      _logOut();
-                                                    }
-                                                  }
-                                                } else {
-                                                  ScaffoldMessenger.of(
-                                                    context,
-                                                  ).showSnackBar(
-                                                    SnackBar(
-                                                      content: Text(
-                                                        'HTTP алдаа: ${response.statusCode}',
-                                                      ),
-                                                      backgroundColor:
-                                                          Colors.red,
-                                                      duration: const Duration(
-                                                        seconds: 1,
-                                                      ),
-                                                    ),
-                                                  );
-                                                }
-                                              } catch (e) {
-                                                debugPrint(
-                                                  'Send SMS error: $e',
-                                                );
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                      'Сүлжээний алдаа: $e',
-                                                    ),
-                                                    backgroundColor: Colors.red,
-                                                    duration: const Duration(
-                                                      seconds: 1,
-                                                    ),
-                                                  ),
-                                                );
-                                              }
-                                            },
-                                            child: const Text(
-                                              "Мессеж илгээх",
-                                              textAlign: TextAlign.center,
-                                            ),
-                                          ),
+                                      if (!isExpanded && address.isNotEmpty)
+                                        Text(address, overflow: TextOverflow.ellipsis, maxLines: 1),
+                                      if (!isExpanded && receivedShort.isNotEmpty)
+                                        Text(
+                                          receivedShort,
+                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: 1,
                                         ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Flexible(
-                                        flex: 4,
-                                        child: SizedBox(
-                                          height: 48,
-                                          child: ElevatedButton(
-                                            onPressed:
-                                                patientSent
-                                                    ? () async {
-                                                      final url =
-                                                          patient['url'];
-                                                      final title =
-                                                          "Дуудлагын жагсаалт";
-                                                      final roomId =
-                                                          patient['roomId'];
-                                                      final roomIdNum =
-                                                          patient['_id'];
-                                                      if (url != null &&
-                                                          url
-                                                              .toString()
-                                                              .startsWith(
-                                                                'http',
-                                                              )) {
-                                                        try {
-                                                          await platform
-                                                              .invokeMethod(
-                                                                'sendRoomIdToAppDelegate',
-                                                                {
-                                                                  'roomId':
-                                                                      roomId,
-                                                                },
-                                                              );
-                                                          Navigator.push(
-                                                            context,
-                                                            MaterialPageRoute(
-                                                              builder:
-                                                                  (
-                                                                    context,
-                                                                  ) => WebViewScreen(
-                                                                    url: url,
-                                                                    title:
-                                                                        title,
-                                                                    roomId:
-                                                                        roomId,
-                                                                    roomIdNum:
-                                                                        roomIdNum,
-                                                                  ),
-                                                            ),
-                                                          );
-                                                        } on PlatformException catch (
-                                                          e
-                                                        ) {
-                                                          debugPrint(
-                                                            "Failed to start location: $e",
-                                                          );
-                                                        }
-                                                      } else {
-                                                        ScaffoldMessenger.of(
-                                                          context,
-                                                        ).showSnackBar(
-                                                          const SnackBar(
-                                                            content: Text(
-                                                              "Invalid URL",
-                                                            ),
-                                                          ),
-                                                        );
-                                                      }
-                                                    }
-                                                    : null,
-                                            child: const Text(
-                                              "Байршил",
-                                              textAlign: TextAlign.center,
-                                            ),
-                                          ),
+                                      const SizedBox(height: 8),
+                                      Padding(
+                                        padding: EdgeInsets.only(right: isNarrowScreen ? 0 : 100.0),
+                                        child: Row(
+                                          mainAxisAlignment: mainAxisAlignment,
+                                          children: [
+                                            // Button 1: Үзлэг (40% on narrow, content-sized on wide)
+                                            isNarrowScreen
+                                                ? Expanded(
+                                                  flex: 5,
+                                                  child: _buildSendMessageButton(
+                                                    context,
+                                                    patient,
+                                                    isTablet,
+                                                  ),
+                                                )
+                                                : Expanded(
+                                                  flex: 5,
+                                                  child: _buildSendMessageButton(
+                                                    context,
+                                                    patient,
+                                                    isTablet,
+                                                  ),
+                                                ),
+
+                                            const SizedBox(width: 8),
+
+                                            // Button 2: Баталгаажуулах (60% on narrow, content-sized on wide)
+                                            isNarrowScreen
+                                                ? Expanded(
+                                                  flex: 5,
+                                                  child: _buildLocationButton(
+                                                    context,
+                                                    patient,
+                                                    isTablet,
+                                                  ),
+                                                )
+                                                : Expanded(
+                                                  flex: 5,
+                                                  child: _buildLocationButton(
+                                                    context,
+                                                    patient,
+                                                    isTablet,
+                                                  ),
+                                                ),
+                                          ],
+
+                                          // children: [
+                                          //   Flexible(
+                                          //     flex: 6,
+                                          //     child: SizedBox(
+                                          //       height: 48,
+                                          //       child: ElevatedButton(
+                                          //         onPressed: () async {
+                                          //           final roomId = patient['roomId'];
+                                          //           final roomIdNum = patient['_id'];
+                                          //           final phone = patient['patientPhone'];
+
+                                          //           if (roomId == null || phone == null) {
+                                          //             ScaffoldMessenger.of(context).showSnackBar(
+                                          //               const SnackBar(
+                                          //                 content: Text(
+                                          //                   'Room ID эсвэл утасны дугаар олдсонгүй',
+                                          //                 ),
+                                          //                 duration: Duration(seconds: 1),
+                                          //               ),
+                                          //             );
+                                          //             return;
+                                          //           }
+
+                                          //           final prefs =
+                                          //               await SharedPreferences.getInstance();
+                                          //           final token =
+                                          //               prefs.getString('X-Medsoft-Token') ?? '';
+                                          //           final server =
+                                          //               prefs.getString('X-Tenant') ?? '';
+
+                                          //           final uri = Uri.parse(
+                                          //             '${Constants.runnerUrl}/gateway/general/get/api/inpatient/ambulance/sendToMedsoftApp?roomId=$roomIdNum&patientPhone=$phone',
+                                          //           );
+
+                                          //           try {
+                                          //             final response = await http.get(
+                                          //               uri,
+                                          //               headers: {
+                                          //                 'X-Medsoft-Token': token,
+                                          //                 'X-Tenant':
+                                          //                     server == 'Citizen'
+                                          //                         ? 'ui.medsoft.care'
+                                          //                         : server,
+                                          //                 'X-Token': Constants.xToken,
+                                          //               },
+                                          //             );
+
+                                          //             if (response.statusCode == 200) {
+                                          //               final json = jsonDecode(response.body);
+                                          //               if (json['success'] == true) {
+                                          //                 ScaffoldMessenger.of(
+                                          //                   context,
+                                          //                 ).showSnackBar(
+                                          //                   const SnackBar(
+                                          //                     content: Text(
+                                          //                       'Мессеж амжилттай илгээгдлээ',
+                                          //                     ),
+                                          //                     backgroundColor: Colors.green,
+                                          //                     duration: Duration(seconds: 1),
+                                          //                   ),
+                                          //                 );
+                                          //                 refreshPatients();
+                                          //               } else {
+                                          //                 ScaffoldMessenger.of(
+                                          //                   context,
+                                          //                 ).showSnackBar(
+                                          //                   SnackBar(
+                                          //                     content: Text(
+                                          //                       json['message'] ?? 'Алдаа гарлаа',
+                                          //                     ),
+                                          //                     backgroundColor: Colors.red,
+                                          //                     duration: const Duration(seconds: 1),
+                                          //                   ),
+                                          //                 );
+                                          //                 if (response.statusCode == 401 ||
+                                          //                     response.statusCode == 403) {
+                                          //                   _logOut();
+                                          //                 }
+                                          //               }
+                                          //             } else {
+                                          //               ScaffoldMessenger.of(context).showSnackBar(
+                                          //                 SnackBar(
+                                          //                   content: Text(
+                                          //                     'HTTP алдаа: ${response.statusCode}',
+                                          //                   ),
+                                          //                   backgroundColor: Colors.red,
+                                          //                   duration: const Duration(seconds: 1),
+                                          //                 ),
+                                          //               );
+                                          //             }
+                                          //           } catch (e) {
+                                          //             debugPrint('Send SMS error: $e');
+                                          //             ScaffoldMessenger.of(context).showSnackBar(
+                                          //               SnackBar(
+                                          //                 content: Text('Сүлжээний алдаа: $e'),
+                                          //                 backgroundColor: Colors.red,
+                                          //                 duration: const Duration(seconds: 1),
+                                          //               ),
+                                          //             );
+                                          //           }
+                                          //         },
+                                          //         child: const Text(
+                                          //           "Мессеж илгээх",
+                                          //           textAlign: TextAlign.center,
+                                          //         ),
+                                          //       ),
+                                          //     ),
+                                          //   ),
+                                          //   const SizedBox(width: 8),
+                                          //   Flexible(
+                                          //     flex: 4,
+                                          //     child: SizedBox(
+                                          //       height: 48,
+                                          //       child: ElevatedButton(
+                                          //         onPressed:
+                                          //             patientSent
+                                          //                 ? () async {
+                                          //                   final url = patient['url'];
+                                          //                   final title = "Дуудлагын жагсаалт";
+                                          //                   final roomId = patient['roomId'];
+                                          //                   final roomIdNum = patient['_id'];
+                                          //                   if (url != null &&
+                                          //                       url.toString().startsWith('http')) {
+                                          //                     try {
+                                          //                       await platform.invokeMethod(
+                                          //                         'sendRoomIdToAppDelegate',
+                                          //                         {'roomId': roomId},
+                                          //                       );
+                                          //                       Navigator.push(
+                                          //                         context,
+                                          //                         MaterialPageRoute(
+                                          //                           builder:
+                                          //                               (context) => WebViewScreen(
+                                          //                                 url: url,
+                                          //                                 title: title,
+                                          //                                 roomId: roomId,
+                                          //                                 roomIdNum: roomIdNum,
+                                          //                               ),
+                                          //                         ),
+                                          //                       );
+                                          //                     } on PlatformException catch (e) {
+                                          //                       debugPrint(
+                                          //                         "Failed to start location: $e",
+                                          //                       );
+                                          //                     }
+                                          //                   } else {
+                                          //                     ScaffoldMessenger.of(
+                                          //                       context,
+                                          //                     ).showSnackBar(
+                                          //                       const SnackBar(
+                                          //                         content: Text("Invalid URL"),
+                                          //                       ),
+                                          //                     );
+                                          //                   }
+                                          //                 }
+                                          //                 : null,
+                                          //         child: const Text(
+                                          //           "Байршил",
+                                          //           textAlign: TextAlign.center,
+                                          //         ),
+                                          //       ),
+                                          //     ),
+                                          //   ),
+                                          // ],
                                         ),
                                       ),
                                     ],
                                   ),
-                                ],
+                                  childrenPadding: const EdgeInsets.all(16.0),
+                                  expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Иргэн:',
+                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                    Html(
+                                      data:
+                                          '$patientName | $patientRegNo<br>$patientPhone<br>Хүйс: $patientGender',
+                                    ),
+                                    const SizedBox(height: 5),
+                                    const Text(
+                                      'Дуудлага:',
+                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                    _buildMultilineHTMLText(reportedCitizen),
+                                    const SizedBox(height: 5),
+                                    const Text(
+                                      'Хүлээж авсан:',
+                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                    _buildMultilineHTMLText(received),
+                                    const SizedBox(height: 5),
+                                    const Text(
+                                      'Ангилал:',
+                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                    _buildMultilineHTMLText(type),
+                                    const SizedBox(height: 5),
+                                    const Text(
+                                      'Дуудлагын цаг:',
+                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                    _buildMultilineHTMLText(time),
+                                    const SizedBox(height: 5),
+                                    const Text(
+                                      'ТТ-ийн баг:',
+                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                    _buildMultilineHTMLText(ambulanceTeam),
+                                    const SizedBox(height: 5),
+                                    if (arrived) ...[
+                                      Text("Distance: ${distance ?? 'N/A'} km"),
+                                      Text("Duration: ${duration ?? 'N/A'}"),
+                                    ],
+                                  ],
+                                ),
                               ),
-                              childrenPadding: const EdgeInsets.all(16.0),
-                              expandedCrossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Иргэн:',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Html(
-                                  data:
-                                      '$patientName | $patientRegNo<br>$patientPhone<br>Хүйс: $patientGender',
-                                ),
-                                const SizedBox(height: 5),
-                                const Text(
-                                  'Дуудлага:',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                _buildMultilineHTMLText(reportedCitizen),
-                                const SizedBox(height: 5),
-                                const Text(
-                                  'Хүлээж авсан:',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                _buildMultilineHTMLText(received),
-                                const SizedBox(height: 5),
-                                const Text(
-                                  'Ангилал:',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                _buildMultilineHTMLText(type),
-                                const SizedBox(height: 5),
-                                const Text(
-                                  'Дуудлагын цаг:',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                _buildMultilineHTMLText(time),
-                                const SizedBox(height: 5),
-                                const Text(
-                                  'ТТ-ийн баг:',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                _buildMultilineHTMLText(ambulanceTeam),
-                                const SizedBox(height: 5),
-                                if (arrived) ...[
-                                  Text("Distance: ${distance ?? 'N/A'} km"),
-                                  Text("Duration: ${duration ?? 'N/A'}"),
-                                ],
-                              ],
                             ),
                           ),
                         ),
