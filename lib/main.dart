@@ -22,21 +22,15 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
+      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
 
       home: FutureBuilder<Widget>(
         future: _getInitialScreen(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
+            return const Scaffold(body: Center(child: CircularProgressIndicator()));
           } else if (snapshot.hasError) {
-            return const Scaffold(
-              body: Center(child: Text("Error checking login status")),
-            );
+            return const Scaffold(body: Center(child: Text("Error checking login status")));
           } else if (snapshot.hasData) {
             return snapshot.data!;
           } else {
@@ -55,8 +49,7 @@ class MyApp extends StatelessWidget {
     bool isGotToken = xServer != null && xServer.isNotEmpty;
 
     String? xMedsoftServer = prefs.getString('X-Medsoft-Token');
-    bool isGotMedsoftToken =
-        xMedsoftServer != null && xMedsoftServer.isNotEmpty;
+    bool isGotMedsoftToken = xMedsoftServer != null && xMedsoftServer.isNotEmpty;
 
     String? username = prefs.getString('Username');
     bool isGotUsername = username != null && username.isNotEmpty;
@@ -86,12 +79,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       FlutterLocalNotificationsPlugin();
   String? username;
 
-  static const platform = MethodChannel(
-    'com.example.new_project_location/location',
-  );
+  static const platform = MethodChannel('com.example.new_project_location/location');
 
-  final GlobalKey<PatientListScreenState> _patientListKey =
-      GlobalKey<PatientListScreenState>();
+  final GlobalKey<PatientListScreenState> _patientListKey = GlobalKey<PatientListScreenState>();
 
   static const String xToken = Constants.xToken;
   Map<String, dynamic> sharedPreferencesData = {};
@@ -111,21 +101,17 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     _sendXServerToAppDelegate();
     _sendXMedsoftTokenToAppDelegate();
 
-    _animationController = AnimationController(
-      vsync: this,
-      duration: Duration(milliseconds: 500),
-    );
+    _animationController = AnimationController(vsync: this, duration: Duration(milliseconds: 500));
 
     _slideAnimation = Tween<Offset>(
       begin: Offset(0, 1),
       end: Offset(0, 0),
-    ).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-    );
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOut));
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 0.8).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 0.8,
+    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
   }
 
   Future<void> _startLocationTracking() async {
@@ -168,8 +154,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     bool isGotToken = xServer != null && xServer.isNotEmpty;
 
     String? xMedsoftServer = prefs.getString('X-Medsoft-Token');
-    bool isGotMedsoftToken =
-        xMedsoftServer != null && xMedsoftServer.isNotEmpty;
+    bool isGotMedsoftToken = xMedsoftServer != null && xMedsoftServer.isNotEmpty;
 
     String? username = prefs.getString('Username');
     bool isGotUsername = username != null && username.isNotEmpty;
@@ -209,18 +194,16 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('app_icon');
 
-    const DarwinInitializationSettings initializationSettingsIOS =
-        DarwinInitializationSettings(
-          requestAlertPermission: true,
-          requestBadgePermission: true,
-          requestSoundPermission: true,
-        );
+    const DarwinInitializationSettings initializationSettingsIOS = DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
 
-    final InitializationSettings initializationSettings =
-        InitializationSettings(
-          android: initializationSettingsAndroid,
-          iOS: initializationSettingsIOS,
-        );
+    final InitializationSettings initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsIOS,
+    );
 
     await flutterLocalNotificationsPlugin.initialize(initializationSettings);
   }
@@ -232,8 +215,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       final longitude = locationData['longitude'];
 
       setState(() {
-        _liveLocation =
-            "Сүүлд илгээсэн байршил\nУртраг: $longitude\nӨргөрөг: $latitude";
+        _liveLocation = "Сүүлд илгээсэн байршил\nУртраг: $longitude\nӨргөрөг: $latitude";
         _addLocationToHistory(latitude, longitude);
       });
     } else if (call.method == 'navigateToLogin') {
@@ -243,18 +225,18 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   }
 
   Future<void> _showNotification() async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
-          'your_channel_id',
-          'your_channel_name',
-          channelDescription: 'Your channel description',
-          importance: Importance.max,
-          priority: Priority.high,
-          showWhen: false,
-        );
+    const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
+      'your_channel_id',
+      'your_channel_name',
+      channelDescription: 'Your channel description',
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: false,
+    );
 
-    const DarwinNotificationDetails iOSPlatformChannelSpecifics =
-        DarwinNotificationDetails(badgeNumber: 1);
+    const DarwinNotificationDetails iOSPlatformChannelSpecifics = DarwinNotificationDetails(
+      badgeNumber: 1,
+    );
 
     const NotificationDetails platformChannelSpecifics = NotificationDetails(
       android: androidPlatformChannelSpecifics,
@@ -293,9 +275,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
   Future<void> _sendXTokenToAppDelegate() async {
     try {
-      await platform.invokeMethod('sendXTokenToAppDelegate', {
-        'xToken': xToken,
-      });
+      await platform.invokeMethod('sendXTokenToAppDelegate', {'xToken': xToken});
     } on PlatformException catch (e) {
       debugPrint("Failed to send xToken to AppDelegate: '${e.message}'.");
     }
@@ -331,10 +311,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       debugPrint("Failed to stop location updates: '${e.message}'.");
     }
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => LoginScreen()),
-    );
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginScreen()));
   }
 
   @override
@@ -356,15 +333,9 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         child: Column(
           children: <Widget>[
             DrawerHeader(
-              decoration: const BoxDecoration(
-                color: Color.fromARGB(255, 236, 169, 175),
-              ),
+              decoration: const BoxDecoration(color: Color.fromARGB(255, 236, 169, 175)),
               child: Center(
-                child: Image.asset(
-                  'assets/icon/locationlogologin.png',
-                  width: 150,
-                  height: 150,
-                ),
+                child: Image.asset('assets/icon/locationlogologin.png', width: 150, height: 150),
               ),
             ),
 
@@ -384,10 +355,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
 
                   ListTile(
                     leading: Icon(Icons.info_outline, color: Colors.blueAccent),
-                    title: Text(
-                      'Хэрэглэх заавар',
-                      style: TextStyle(fontSize: 18),
-                    ),
+                    title: Text('Хэрэглэх заавар', style: TextStyle(fontSize: 18)),
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
