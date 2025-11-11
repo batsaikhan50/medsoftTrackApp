@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_app_badger/flutter_app_badger.dart';
 import 'package:http/http.dart' as http;
 import 'package:keyboard_actions/keyboard_actions.dart';
+import 'package:new_project_location/api/auth_dao.dart';
 import 'package:new_project_location/constants.dart';
 import 'package:new_project_location/main.dart';
 import 'package:new_project_location/webview_screen.dart';
@@ -20,6 +21,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
+  final _authDao = AuthDAO();
   final TextEditingController _usernameLoginController = TextEditingController();
   final TextEditingController _passwordLoginController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
@@ -134,42 +136,43 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _fetchServerData() async {
-    const url = '${Constants.runnerUrl}/gateway/servers';
-    final headers = {'X-Token': Constants.xToken};
+    final response = await _authDao.getHospitals();
 
-    try {
-      final response = await http.get(Uri.parse(url), headers: headers);
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        if (data['success'] == true) {
-          final List<Map<String, String>> serverNames = List<Map<String, String>>.from(
-            data['data'].map<Map<String, String>>((server) {
-              return {
-                'name': server['name'].toString(),
-                'fullName': server['fullName'].toString(),
-                'domain': server['domain'].toString(),
-              };
-            }),
-          );
+    setState(() {
+      // 2. Check for overall success (HTTP 200, and API 'success': true)
+      if (response.success && response.data != null) {
+        // 3. Map the List<dynamic> data into the required List<Map<String, String>> format
+        final List<Map<String, String>> serverNames =
+            response.data!
+                .whereType<Map<String, dynamic>>() // Ensure we only process maps
+                .map<Map<String, String>>((server) {
+                  return {
+                    'name': server['name']?.toString() ?? '',
+                    'fullName': server['fullName']?.toString() ?? '',
+                    'domain': server['domain']?.toString() ?? '',
+                  };
+                })
+                .toList();
 
-          setState(() {
-            _serverNames = serverNames;
-          });
-        } else {
-          setState(() {
-            _errorMessage = 'Эмнэлгүүдийг дуудах үйлдэл амжилтгүй боллоо.';
-          });
-        }
+        _serverNames = serverNames;
+        _errorMessage = ''; // Clear any previous error
       } else {
-        setState(() {
-          _errorMessage = 'Серверийн мэдээлэл авахад алдаа гарлаа.';
-        });
+        // 4. Handle error cases
+        final String statusDetail =
+            response.statusCode != null ? ' (Статус: ${response.statusCode})' : '';
+
+        if (response.statusCode == 200) {
+          // API returned success: false (handled by response.message)
+          _errorMessage = response.message ?? 'Эмнэлгүүдийг дуудах үйлдэл амжилтгүй боллоо.';
+        } else if (response.message?.contains('Invalid response format') == true) {
+          // Network/parsing error (handled by DAO's catch block)
+          _errorMessage = 'Алдаа гарлаа: ${response.message}';
+        } else {
+          // HTTP error (non-200) or other generic failure
+          _errorMessage = 'Серверийн мэдээлэл авахад алдаа гарлаа$statusDetail.';
+        }
       }
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Алдаа гарлаа: $e';
-      });
-    }
+    });
   }
 
   void _updatePasswordRules() {
@@ -297,75 +300,75 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
     return allPassed && passwordMatchError == null && _regNoValidationError == null;
   }
 
-  Future<void> _register() async {
-    setState(() {
-      _isLoading = true;
-    });
+  // Future<void> _register() async {
+  //   setState(() {
+  //     _isLoading = true;
+  //   });
 
-    final body = {
-      'username': _usernameController.text,
-      'password': _passwordController.text,
-      'passwordConfirm': _passwordCheckController.text,
-      'regNo': _regNoController.text,
-      'firstname': _firstnameController.text,
-      'lastname': _lastnameController.text,
-      'type': 'driver',
-    };
+  //   final body = {
+  //     'username': _usernameController.text,
+  //     'password': _passwordController.text,
+  //     'passwordConfirm': _passwordCheckController.text,
+  //     'regNo': _regNoController.text,
+  //     'firstname': _firstnameController.text,
+  //     'lastname': _lastnameController.text,
+  //     'type': 'driver',
+  //   };
 
-    final headers = {'Content-Type': 'application/json'};
+  //   final headers = {'Content-Type': 'application/json'};
 
-    debugPrint('Request Headers: $headers');
-    debugPrint('Request Body: ${json.encode(body)}');
+  //   debugPrint('Request Headers: $headers');
+  //   debugPrint('Request Body: ${json.encode(body)}');
 
-    try {
-      final response = await http.post(
-        Uri.parse('${Constants.appUrl}/auth/signup'),
-        headers: headers,
-        body: json.encode(body),
-      );
+  //   try {
+  //     final response = await http.post(
+  //       Uri.parse('${Constants.appUrl}/auth/signup'),
+  //       headers: headers,
+  //       body: json.encode(body),
+  //     );
 
-      debugPrint('Register response Status: ${response.statusCode}');
-      debugPrint('Register response Body: ${response.body}');
+  //     debugPrint('Register response Status: ${response.statusCode}');
+  //     debugPrint('Register response Body: ${response.body}');
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-        if (data['success'] == true) {
-          SharedPreferences prefs = await SharedPreferences.getInstance();
+  //     if (response.statusCode == 200) {
+  //       final Map<String, dynamic> data = json.decode(response.body);
+  //       if (data['success'] == true) {
+  //         SharedPreferences prefs = await SharedPreferences.getInstance();
 
-          await prefs.remove('isLoggedIn');
-          await prefs.remove('X-Tenant');
-          await prefs.remove('X-Medsoft-Token');
-          await prefs.remove('Username');
-          await prefs.remove('scannedToken');
-          await prefs.remove('tenantDomain');
-          await prefs.remove('forgetUrl');
+  //         await prefs.remove('isLoggedIn');
+  //         await prefs.remove('X-Tenant');
+  //         await prefs.remove('X-Medsoft-Token');
+  //         await prefs.remove('Username');
+  //         await prefs.remove('scannedToken');
+  //         await prefs.remove('tenantDomain');
+  //         await prefs.remove('forgetUrl');
 
-          setState(() {
-            _selectedToggleIndex = 0;
-            _dragPosition = 0.0;
-            _isLoading = false;
-          });
-        } else {
-          setState(() {
-            _errorMessage = 'Бүртгэл амжилтгүй боллоо: ${data['message']}';
-            _isLoading = false;
-          });
-        }
-      } else {
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isLoggedIn', false);
-        setState(() {
-          _errorMessage = 'Бүртгэх үед алдаа гарлаа. Дахин оролдоно уу.';
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Алдаа гарлаа: $e';
-        _isLoading = false;
-      });
-    }
-  }
+  //         setState(() {
+  //           _selectedToggleIndex = 0;
+  //           _dragPosition = 0.0;
+  //           _isLoading = false;
+  //         });
+  //       } else {
+  //         setState(() {
+  //           _errorMessage = 'Бүртгэл амжилтгүй боллоо: ${data['message']}';
+  //           _isLoading = false;
+  //         });
+  //       }
+  //     } else {
+  //       SharedPreferences prefs = await SharedPreferences.getInstance();
+  //       await prefs.setBool('isLoggedIn', false);
+  //       setState(() {
+  //         _errorMessage = 'Бүртгэх үед алдаа гарлаа. Дахин оролдоно уу.';
+  //         _isLoading = false;
+  //       });
+  //     }
+  //   } catch (e) {
+  //     setState(() {
+  //       _errorMessage = 'Алдаа гарлаа: $e';
+  //       _isLoading = false;
+  //     });
+  //   }
+  // }
 
   Future<void> _login() async {
     setState(() {
@@ -395,26 +398,27 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
     debugPrint('Request Body: ${json.encode(body)}');
 
     try {
-      final response = await http.post(
-        Uri.parse('${Constants.runnerUrl}/gateway/auth'),
-        headers: headers,
-        body: json.encode(body),
-      );
+      // final response = await http.post(
+      //   Uri.parse('${Constants.runnerUrl}/gateway/auth'),
+      //   headers: headers,
+      //   body: json.encode(body),
+      // );
 
+      final response = await _authDao.login(body);
       debugPrint('Response Status: ${response.statusCode}');
-      debugPrint('Response Body: ${response.body}');
+      debugPrint('Response Body: ${response.data}');
 
       if (response.statusCode == 200) {
         if (!(Platform.environment['SIMULATOR_DEVICE_NAME'] == 'iPhone SE (3rd generation)')) {
           FlutterAppBadger.removeBadge();
         } else {}
 
-        final Map<String, dynamic> data = json.decode(response.body);
-        if (data['success'] == true) {
+        final Map<String, dynamic> data = response.data!;
+        if (response.success == true) {
           SharedPreferences prefs = await SharedPreferences.getInstance();
           await prefs.setBool('isLoggedIn', true);
 
-          final String token = data['data']['token'];
+          final String token = data['token'] ?? '';
 
           await prefs.setString('X-Tenant', _selectedRole?['name'] ?? '');
           await prefs.setString('X-Medsoft-Token', token);
@@ -432,7 +436,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
           );
         } else {
           setState(() {
-            _errorMessage = 'Нэвтрэхэд амжилтгүй боллоо: ${data['message']}';
+            _errorMessage = 'Нэвтрэхэд амжилтгүй боллоо: ${response.message}';
             _isLoading = false;
           });
         }
@@ -733,6 +737,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                                 });
                                 SharedPreferences prefs = await SharedPreferences.getInstance();
                                 await prefs.setString('forgetUrl', newValue['domain'] ?? '');
+                                await prefs.setString('X-Tenant', newValue['name'] ?? '');
                               }
                             },
                             items:
@@ -1053,13 +1058,13 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                       _isLoading
                           ? null
                           : () {
-                            if (_selectedToggleIndex == 1) {
-                              if (_validateRegisterInputs()) {
-                                _register();
-                              }
-                            } else {
-                              _login();
-                            }
+                            // if (_selectedToggleIndex == 1) {
+                            //   if (_validateRegisterInputs()) {
+                            //     _register();
+                            //   }
+                            // } else {
+                            _login();
+                            // }
                           },
                   child:
                       _isLoading
