@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+import 'package:new_project_location/api/map_dao.dart';
 import 'package:new_project_location/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -29,11 +30,10 @@ class _WebViewScreenState extends State<WebViewScreen> {
   late final WebViewController _controller;
   bool arrivedInFifty = false;
 
-  static const platform = MethodChannel(
-    'com.example.new_project_location/location',
-  );
+  static const platform = MethodChannel('com.example.new_project_location/location');
   List<String> activeLocationLogs = [];
 
+  final _mapDAO = MapDAO();
   @override
   void initState() {
     super.initState();
@@ -60,9 +60,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
     platform.setMethodCallHandler((call) async {
       if (call.method == 'arrivedInFiftyReached') {
         final bool arrived = call.arguments?['arrivedInFifty'] ?? false;
-        debugPrint(
-          "arrivedInFiftyReached received in Dart: ${call.arguments?['arrivedInFifty']}",
-        );
+        debugPrint("arrivedInFiftyReached received in Dart: ${call.arguments?['arrivedInFifty']}");
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('arrivedInFifty', arrived);
@@ -82,9 +80,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
       if (call.method == 'activeLocationSaved') {
         debugPrint("activeLocationSaved_1: ${call.arguments?['saveCounter']}");
         debugPrint("activeLocationSaved_2: ${call.arguments?['savedTime']}");
-        debugPrint(
-          "activeLocationSaved_3: ${call.arguments?['distanceUpdate']}",
-        );
+        debugPrint("activeLocationSaved_3: ${call.arguments?['distanceUpdate']}");
 
         final saveCounter = call.arguments?['saveCounter'];
         final savedTime = call.arguments?['savedTime'];
@@ -136,65 +132,55 @@ class _WebViewScreenState extends State<WebViewScreen> {
   }
 
   Future<void> _markArrived(String id) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('X-Medsoft-Token') ?? '';
-      final server = prefs.getString('X-Tenant') ?? '';
+    // try {
+    // final prefs = await SharedPreferences.getInstance();
+    // final token = prefs.getString('X-Medsoft-Token') ?? '';
+    // final server = prefs.getString('X-Tenant') ?? '';
 
-      final uri = Uri.parse('${Constants.appUrl}/room/arrived?id=$id');
+    // final uri = Uri.parse('${Constants.appUrl}/room/arrived?id=$id');
 
-      final response = await http.get(
-        uri,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'X-Medsoft-Token': token,
-          'X-Tenant': server,
-          'X-Token': Constants.xToken,
-        },
+    // final response = await http.get(
+    //   uri,
+    //   headers: {
+    //     'Authorization': 'Bearer $token',
+    //     'X-Medsoft-Token': token,
+    //     'X-Tenant': server,
+    //     'X-Token': Constants.xToken,
+    //   },
+    // );
+    final response = await _mapDAO.sendArrivedToPatient(id);
+
+    if (response.success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Амжилттай бүртгэгдлээ'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 1),
+        ),
       );
 
-      if (response.statusCode == 200) {
-        final json = jsonDecode(response.body);
-        if (json['success'] == true) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Амжилттай бүртгэгдлээ'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 1),
-            ),
-          );
-
-          await platform.invokeMethod('startIdleLocation');
-          Navigator.of(context).pop();
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(json['message'] ?? 'Амжилтгүй'),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 1),
-            ),
-          );
-        }
-      } else {
-        final Map<String, dynamic> data = json.decode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('HTTP алдаа: ${data.toString()}'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 1),
-          ),
-        );
-      }
-    } catch (e) {
-      debugPrint("Failed to mark arrived: $e");
+      await platform.invokeMethod('startIdleLocation');
+      Navigator.of(context).pop();
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Сүлжээний алдаа: $e'),
+          content: Text(response.message ?? 'Амжилтгүй'),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 1),
         ),
       );
     }
+
+    // } catch (e) {
+    //   debugPrint("Failed to mark arrived: $e");
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(
+    //       content: Text('Сүлжээний алдаа: $e'),
+    //       backgroundColor: Colors.red,
+    //       duration: const Duration(seconds: 1),
+    //     ),
+    //   );
+    // }
   }
 
   Widget _buildActionButton({
@@ -211,9 +197,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           elevation: 2,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           alignment: Alignment.centerLeft,
@@ -229,20 +213,11 @@ class _WebViewScreenState extends State<WebViewScreen> {
         automaticallyImplyLeading: false,
         backgroundColor: const Color(0xFF009688),
         title: GestureDetector(
-          onTap:
-              () => {
-                platform.invokeMethod("startIdleLocation"),
-                Navigator.pop(context),
-              },
+          onTap: () => {platform.invokeMethod("startIdleLocation"), Navigator.pop(context)},
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.only(
-                  left: 12,
-                  right: 16,
-                  top: 1,
-                  bottom: 2,
-                ),
+                padding: const EdgeInsets.only(left: 12, right: 16, top: 1, bottom: 2),
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.all(Radius.circular(25)),
@@ -253,10 +228,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                     const SizedBox(width: 8),
                     Text(
                       widget.title,
-                      style: const TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -289,10 +261,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                                   .map(
                                     (log) => Text(
                                       log,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 15,
-                                      ),
+                                      style: const TextStyle(color: Colors.white, fontSize: 15),
                                       textAlign: TextAlign.center,
                                     ),
                                   )

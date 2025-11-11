@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:http/http.dart' as http;
+import 'package:new_project_location/api/map_dao.dart';
 import 'package:new_project_location/login.dart';
 import 'package:new_project_location/webview_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -26,6 +27,8 @@ class PatientListScreenState extends State<PatientListScreen> {
   Timer? _refreshTimer;
   final Set<int> _expandedTiles = {};
   static const platform = MethodChannel('com.example.new_project_location/location');
+  final _mapDAO = MapDAO();
+
   @override
   void initState() {
     super.initState();
@@ -52,29 +55,28 @@ class PatientListScreenState extends State<PatientListScreen> {
       setState(() => isLoading = true);
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('X-Medsoft-Token') ?? '';
-    final server = prefs.getString('X-Tenant') ?? '';
+    // final prefs = await SharedPreferences.getInstance();
+    // final token = prefs.getString('X-Medsoft-Token') ?? '';
+    // final server = prefs.getString('X-Tenant') ?? '';
 
-    final uri = Uri.parse('${Constants.appUrl}/room/get/driver');
+    // final uri = Uri.parse('${Constants.appUrl}/room/get/driver');
 
-    final headers = {
-      'Authorization': 'Bearer $token',
-      'X-Medsoft-Token': token,
-      'X-Tenant': server,
-      'X-Token': Constants.xToken,
-    };
+    // final headers = {
+    //   'Authorization': 'Bearer $token',
+    //   'X-Medsoft-Token': token,
+    //   'X-Tenant': server,
+    //   'X-Token': Constants.xToken,
+    // };
 
-    final response = await http.get(uri, headers: headers);
+    // final response = await http.get(uri, headers: headers);
+    final response = await _mapDAO.getPatientsListAmbulance();
 
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      if (json['success'] == true) {
-        setState(() {
-          patients = json['data'];
-          isLoading = false;
-        });
-      }
+    if (response.success) {
+      final json = response.data!;
+      setState(() {
+        patients = json;
+        isLoading = false;
+      });
     } else {
       if (initialLoad) {
         setState(() => isLoading = false);
@@ -179,55 +181,45 @@ class PatientListScreenState extends State<PatientListScreen> {
             return;
           }
 
-          final prefs = await SharedPreferences.getInstance();
-          final token = prefs.getString('X-Medsoft-Token') ?? '';
-          final server = prefs.getString('X-Tenant') ?? '';
+          // final prefs = await SharedPreferences.getInstance();
+          // final token = prefs.getString('X-Medsoft-Token') ?? '';
+          // final server = prefs.getString('X-Tenant') ?? '';
 
-          final uri = Uri.parse(
-            '${Constants.runnerUrl}/gateway/general/get/api/inpatient/ambulance/sendToMedsoftApp?roomId=$roomIdNum&patientPhone=$phone',
-          );
+          // final uri = Uri.parse(
+          //   '${Constants.runnerUrl}/gateway/general/get/api/inpatient/ambulance/sendToMedsoftApp?roomId=$roomIdNum&patientPhone=$phone',
+          // );
 
           try {
-            final response = await http.get(
-              uri,
-              headers: {
-                'X-Medsoft-Token': token,
-                'X-Tenant': server == 'Citizen' ? 'ui.medsoft.care' : server,
-                'X-Token': Constants.xToken,
-              },
-            );
+            // final response = await http.get(
+            //   uri,
+            //   headers: {
+            //     'X-Medsoft-Token': token,
+            //     'X-Tenant': server == 'Citizen' ? 'ui.medsoft.care' : server,
+            //     'X-Token': Constants.xToken,
+            //   },
+            // );
+            final response = await _mapDAO.sendSmsToPatient(roomId, phone);
 
-            if (response.statusCode == 200) {
-              final json = jsonDecode(response.body);
-              if (json['success'] == true) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Мессеж амжилттай илгээгдлээ'),
-                    backgroundColor: Colors.green,
-                    duration: Duration(seconds: 1),
-                  ),
-                );
-                refreshPatients();
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(json['message'] ?? 'Алдаа гарлаа'),
-                    backgroundColor: Colors.red,
-                    duration: const Duration(seconds: 1),
-                  ),
-                );
-                if (response.statusCode == 401 || response.statusCode == 403) {
-                  _logOut();
-                }
-              }
+            if (response.success) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Мессеж амжилттай илгээгдлээ'),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 1),
+                ),
+              );
+              refreshPatients();
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('HTTP алдаа: ${response.statusCode}'),
+                  content: Text(response.message ?? 'Алдаа гарлаа'),
                   backgroundColor: Colors.red,
                   duration: const Duration(seconds: 1),
                 ),
               );
+              if (response.statusCode == 401 || response.statusCode == 403) {
+                _logOut();
+              }
             }
           } catch (e) {
             debugPrint('Send SMS error: $e');
