@@ -1,5 +1,5 @@
-import 'package:new_project_location/api/base_dao.dart';
-import 'package:new_project_location/constants.dart';
+import 'package:medsoft_track/api/base_dao.dart';
+import 'package:medsoft_track/constants.dart';
 import 'package:flutter/material.dart';
 
 //Нэвтрэх, бүртгүүлэх DAO

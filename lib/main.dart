@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:new_project_location/constants.dart';
-import 'package:new_project_location/guide.dart';
-import 'package:new_project_location/patient_list.dart';
+import 'package:medsoft_track/constants.dart';
+import 'package:medsoft_track/guide.dart';
+import 'package:medsoft_track/patient_list.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'login.dart';
@@ -79,7 +79,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       FlutterLocalNotificationsPlugin();
   String? username;
 
-  static const platform = MethodChannel('com.example.new_project_location/location');
+  static const platform = MethodChannel('com.example.medsoft_track/location');
 
   final GlobalKey<PatientListScreenState> _patientListKey = GlobalKey<PatientListScreenState>();
 

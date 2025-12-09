@@ -1,4 +1,4 @@
-package com.example.new_project_location
+package com.example.medsoft_track
 
 import io.flutter.embedding.android.FlutterActivity
 

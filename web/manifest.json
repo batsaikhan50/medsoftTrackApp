@@ -1,6 +1,6 @@
 {
-    "name": "new_project_location",
-    "short_name": "new_project_location",
+    "name": "medsoft_track",
+    "short_name": "medsoft_track",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

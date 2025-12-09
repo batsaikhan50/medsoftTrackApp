@@ -7,10 +7,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_app_badger/flutter_app_badger.dart';
 import 'package:http/http.dart' as http;
 import 'package:keyboard_actions/keyboard_actions.dart';
-import 'package:new_project_location/api/auth_dao.dart';
-import 'package:new_project_location/constants.dart';
-import 'package:new_project_location/main.dart';
-import 'package:new_project_location/webview_screen.dart';
+import 'package:medsoft_track/api/auth_dao.dart';
+import 'package:medsoft_track/constants.dart';
+import 'package:medsoft_track/main.dart';
+import 'package:medsoft_track/webview_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {

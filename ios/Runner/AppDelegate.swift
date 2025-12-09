@@ -32,7 +32,7 @@ import UserNotifications
 
     let controller = window?.rootViewController as! FlutterViewController
     flutterChannel = FlutterMethodChannel(
-      name: "com.example.new_project_location/location", binaryMessenger: controller.binaryMessenger
+      name: "com.example.medsoft_track/location", binaryMessenger: controller.binaryMessenger
     )
 
     flutterChannel?.setMethodCallHandler { [weak self] (call, result) in
@@ -90,7 +90,7 @@ import UserNotifications
     GeneratedPluginRegistrant.register(with: self)
 
     BGTaskScheduler.shared.register(
-      forTaskWithIdentifier: "com.example.new_project_location.sendLocation", using: nil
+      forTaskWithIdentifier: "com.example.medsoft_track.sendLocation", using: nil
     ) { task in
       self.handleSendLocationTask(task: task)
     }
@@ -519,7 +519,7 @@ import UserNotifications
 
   func scheduleBackgroundTask() {
     let request = BGProcessingTaskRequest(
-      identifier: "com.example.new_project_location.sendLocation")
+      identifier: "com.example.medsoft_track.sendLocation")
     request.requiresNetworkConnectivity = true
     request.requiresExternalPower = false
 

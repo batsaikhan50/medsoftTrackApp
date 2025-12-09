@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:http/http.dart' as http;
-import 'package:new_project_location/api/map_dao.dart';
-import 'package:new_project_location/login.dart';
-import 'package:new_project_location/webview_screen.dart';
+import 'package:medsoft_track/api/map_dao.dart';
+import 'package:medsoft_track/login.dart';
+import 'package:medsoft_track/webview_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants.dart';
@@ -26,7 +26,7 @@ class PatientListScreenState extends State<PatientListScreen> {
   Map<String, dynamic> sharedPreferencesData = {};
   Timer? _refreshTimer;
   final Set<int> _expandedTiles = {};
-  static const platform = MethodChannel('com.example.new_project_location/location');
+  static const platform = MethodChannel('com.example.medsoft_track/location');
   final _mapDAO = MapDAO();
 
   @override
