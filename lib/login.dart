@@ -5,7 +5,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_app_badger/flutter_app_badger.dart';
-import 'package:http/http.dart' as http;
 import 'package:keyboard_actions/keyboard_actions.dart';
 import 'package:medsoft_track/api/auth_dao.dart';
 import 'package:medsoft_track/constants.dart';
@@ -197,6 +196,8 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
       debugPrint('shortestSide : $shortestSide');
 
       const double tabletBreakpoint = 600;
+
+      debugPrint('isTablet: ${shortestSide >= tabletBreakpoint}');
 
       if (shortestSide < tabletBreakpoint) {
         SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
@@ -680,7 +681,10 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
 
   Widget _buildLoginForm() {
     final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
-    final maxWidth = isTablet ? MediaQuery.of(context).size.width * 0.5 : double.infinity;
+
+    const double maxToggleWidth = 500.0;
+
+    final contentWidth = isTablet ? maxToggleWidth : double.infinity;
 
     return SingleChildScrollView(
       controller: _scrollController,
@@ -689,14 +693,14 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
         right: 16,
         top:
             MediaQuery.of(context).size.shortestSide >= 600
-                ? MediaQuery.of(context).size.height * 0.15
+                ? MediaQuery.of(context).size.height * 0.10
                 : 70,
         bottom: MediaQuery.of(context).viewInsets.bottom + 32,
       ),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       child: Center(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxWidth),
+          constraints: BoxConstraints(maxWidth: contentWidth),
           child: Form(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
