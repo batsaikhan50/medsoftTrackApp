@@ -142,7 +142,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2.5)),
           elevation: 2,
           padding: const EdgeInsets.symmetric(horizontal: 12),
           alignment: Alignment.centerLeft,
@@ -188,7 +188,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                 children: [
                   WebViewWidget(controller: _controller),
                   Positioned(
-                    bottom: 120,
+                    bottom: 250,
                     left: 0,
                     right: 0,
                     child: Center(
@@ -217,8 +217,8 @@ class _WebViewScreenState extends State<WebViewScreen> {
                   ),
 
                   Positioned(
-                    top: 16,
-                    right: 16,
+                    top: 10,
+                    right: 60,
                     child: _buildActionButton(
                       icon: Icons.refresh,
                       label: 'Refresh',
@@ -228,10 +228,10 @@ class _WebViewScreenState extends State<WebViewScreen> {
                     ),
                   ),
 
-                  if (widget.roomIdNum != null && arrivedInFifty)
+                  if (widget.roomIdNum != null && !arrivedInFifty)
                     Positioned(
-                      top: 72,
-                      right: 16,
+                      top: 60,
+                      right: 60,
                       child: _buildActionButton(
                         icon: Icons.check_circle,
                         label: 'Ирсэн',
