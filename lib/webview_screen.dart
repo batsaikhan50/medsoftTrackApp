@@ -103,51 +103,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
     });
   }
 
-  Future<void> _sendLocation() async {
-    try {
-      await platform.invokeMethod('sendLocationToAPIByButton');
-
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Location sent successfully'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 1),
-        ),
-      );
-    } on PlatformException catch (e) {
-      debugPrint("Failed to send location: '${e.message}'");
-
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to send location: ${e.message}'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 1),
-        ),
-      );
-    }
-  }
-
   Future<void> _markArrived(String id) async {
-    // try {
-    // final prefs = await SharedPreferences.getInstance();
-    // final token = prefs.getString('X-Medsoft-Token') ?? '';
-    // final server = prefs.getString('X-Tenant') ?? '';
-
-    // final uri = Uri.parse('${Constants.appUrl}/room/arrived?id=$id');
-
-    // final response = await http.get(
-    //   uri,
-    //   headers: {
-    //     'Authorization': 'Bearer $token',
-    //     'X-Medsoft-Token': token,
-    //     'X-Tenant': server,
-    //     'X-Token': Constants.xToken,
-    //   },
-    // );
     final response = await _mapDAO.sendArrivedToPatient(id);
 
     if (response.success) {
@@ -170,17 +126,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
         ),
       );
     }
-
-    // } catch (e) {
-    //   debugPrint("Failed to mark arrived: $e");
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(
-    //       content: Text('Сүлжээний алдаа: $e'),
-    //       backgroundColor: Colors.red,
-    //       duration: const Duration(seconds: 1),
-    //     ),
-    //   );
-    // }
   }
 
   Widget _buildActionButton({
@@ -295,16 +240,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
                         },
                       ),
                     ),
-
-                  Positioned(
-                    bottom: 24,
-                    right: 90,
-                    child: _buildActionButton(
-                      icon: Icons.send,
-                      label: 'Байршил илгээх',
-                      onPressed: _sendLocation,
-                    ),
-                  ),
                 ],
               )
               : WebViewWidget(controller: _controller),
