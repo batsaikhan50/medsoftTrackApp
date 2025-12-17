@@ -191,8 +191,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   }
 
   void _initializeNotifications() async {
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('app_icon');
+    const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
 
     const DarwinInitializationSettings initializationSettingsIOS = DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -201,7 +200,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     );
 
     final InitializationSettings initializationSettings = InitializationSettings(
-      android: initializationSettingsAndroid,
+      android: androidSettings,
       iOS: initializationSettingsIOS,
     );
 

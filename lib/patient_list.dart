@@ -1,16 +1,12 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_html/flutter_html.dart';
-import 'package:http/http.dart' as http;
 import 'package:medsoft_track/api/map_dao.dart';
 import 'package:medsoft_track/login.dart';
 import 'package:medsoft_track/webview_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../constants.dart';
 
 class PatientListScreen extends StatefulWidget {
   const PatientListScreen({super.key});
@@ -51,7 +47,7 @@ class PatientListScreenState extends State<PatientListScreen> {
   }
 
   Future<void> fetchPatients({bool initialLoad = false}) async {
-    if (initialLoad) {
+    if (initialLoad && mounted) {
       setState(() => isLoading = true);
     }
 
@@ -67,7 +63,7 @@ class PatientListScreenState extends State<PatientListScreen> {
     //   'X-Tenant': server,
     //   'X-Token': Constants.xToken,
     // };
-
+    if (!mounted) return;
     // final response = await http.get(uri, headers: headers);
     final response = await _mapDAO.getPatientsListAmbulance();
 
@@ -97,7 +93,7 @@ class PatientListScreenState extends State<PatientListScreen> {
     await prefs.remove('scannedToken');
     await prefs.remove('tenantDomain');
     await prefs.remove('forgetUrl');
-
+    if (!mounted) return;
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginScreen()));
   }
 
@@ -113,7 +109,7 @@ class PatientListScreenState extends State<PatientListScreen> {
         data[key] = prefs.getString(key) ?? 'null';
       }
     }
-
+    if (!mounted) return;
     setState(() {
       username = prefs.getString('Username');
       sharedPreferencesData = data;
@@ -199,7 +195,7 @@ class PatientListScreenState extends State<PatientListScreen> {
             //   },
             // );
             final response = await _mapDAO.sendSmsToPatient(roomId, phone);
-
+            if (!mounted) return;
             if (response.success) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -223,6 +219,7 @@ class PatientListScreenState extends State<PatientListScreen> {
             }
           } catch (e) {
             debugPrint('Send SMS error: $e');
+            if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Сүлжээний алдаа: $e'),
@@ -260,6 +257,7 @@ class PatientListScreenState extends State<PatientListScreen> {
                   if (url != null && url.toString().startsWith('http')) {
                     try {
                       await platform.invokeMethod('sendRoomIdToAppDelegate', {'roomId': roomId});
+                      if (!mounted) return;
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -276,6 +274,7 @@ class PatientListScreenState extends State<PatientListScreen> {
                       debugPrint("Failed to start location: $e");
                     }
                   } else {
+                    if (!mounted) return;
                     ScaffoldMessenger.of(
                       context,
                     ).showSnackBar(const SnackBar(content: Text("Invalid URL")));

@@ -680,29 +680,52 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildLoginForm() {
-    final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
+    final mediaQuery = MediaQuery.of(context);
+    final screenHeight = mediaQuery.size.height;
+
+    // Check for "tablet" size (usually screens with shortest side >= 600 logical pixels)
+    final isTablet = mediaQuery.size.shortestSide >= 600;
 
     const double maxToggleWidth = 500.0;
+    const double standardHorizontalPadding = 16.0;
 
-    final contentWidth = isTablet ? maxToggleWidth : double.infinity;
+    // The safe area height available for the content (excluding status/nav bar)
+    final double safeHeight = screenHeight - mediaQuery.padding.top - mediaQuery.padding.bottom;
+
+    // 1. Determine if the keyboard is active
+    final bool isKeyboardVisible = mediaQuery.viewInsets.bottom > 0;
+
+    // 2. Define vertical padding for the entire scroll view
+    const double verticalPadding = 32.0; // Consistent top/bottom padding when keyboard is down
+
+    // 3. The minimum height the content needs to be to force vertical centering
+    // Only apply this minHeight when the keyboard is NOT visible.
+    final double minContentHeight =
+        isKeyboardVisible
+            ? 0.0 // Allow content to be its natural size when scrolling (keyboard up)
+            : safeHeight - (verticalPadding * 2); // Center when keyboard is down
 
     return SingleChildScrollView(
       controller: _scrollController,
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top:
-            MediaQuery.of(context).size.shortestSide >= 600
-                ? MediaQuery.of(context).size.height * 0.10
-                : 70,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 32,
-      ),
+      // Apply consistent vertical padding. The bottom padding will be handled by
+      // the Column's contents (using a Spacer) when keyboard is NOT visible,
+      // and by the system when the keyboard IS visible.
+      padding: const EdgeInsets.symmetric(horizontal: standardHorizontalPadding),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       child: Center(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: contentWidth),
+          constraints: BoxConstraints(
+            maxWidth: isTablet ? maxToggleWidth : double.infinity,
+            // Only enforce minHeight for vertical centering when the keyboard is closed.
+            minHeight: minContentHeight.clamp(0.0, double.infinity),
+          ),
           child: Form(
             child: Column(
+              mainAxisAlignment:
+                  isKeyboardVisible
+                      ? MainAxisAlignment
+                          .start // Start from top when keyboard is visible
+                      : MainAxisAlignment.center, // Center when keyboard is closed
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Image.asset('assets/icon/locationlogologin.png', height: 150),
