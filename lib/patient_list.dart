@@ -32,7 +32,11 @@ class PatientListScreenState extends State<PatientListScreen> {
     _loadSharedPreferencesData();
 
     _refreshTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
-      refreshPatients();
+      if (mounted) {
+        refreshPatients();
+      } else {
+        timer.cancel();
+      }
     });
   }
 
@@ -47,6 +51,8 @@ class PatientListScreenState extends State<PatientListScreen> {
   }
 
   Future<void> fetchPatients({bool initialLoad = false}) async {
+
+    if (!mounted) return;
     if (initialLoad && mounted) {
       setState(() => isLoading = true);
     }
@@ -63,23 +69,32 @@ class PatientListScreenState extends State<PatientListScreen> {
     //   'X-Tenant': server,
     //   'X-Token': Constants.xToken,
     // };
-    if (!mounted) return;
     // final response = await http.get(uri, headers: headers);
-    final response = await _mapDAO.getPatientsListAmbulance();
+    try {
+      final response = await _mapDAO.getPatientsListAmbulance();
 
-    if (response.success) {
-      final json = response.data!;
-      setState(() {
-        patients = json;
-        isLoading = false;
-      });
-    } else {
-      if (initialLoad) {
-        setState(() => isLoading = false);
+      // Check mounted again after the asynchronous network call
+      if (!mounted) return;
+
+      if (response.success) {
+        final json = response.data!;
+        setState(() {
+          patients = json;
+          isLoading = false;
+        });
+      } else {
+        if (initialLoad) {
+          setState(() => isLoading = false);
+        }
+        if (response.statusCode == 401 || response.statusCode == 403) {
+          _logOut();
+        }
       }
-
-      if (response.statusCode == 401 || response.statusCode == 403) {
-        _logOut();
+    } catch (e) {
+      // Handle the SocketException to prevent the app from crashing
+      debugPrint("Network error: $e");
+      if (initialLoad && mounted) {
+        setState(() => isLoading = false);
       }
     }
   }
