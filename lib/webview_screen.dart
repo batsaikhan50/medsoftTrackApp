@@ -17,7 +17,7 @@ class WebViewScreen extends StatefulWidget {
   const WebViewScreen({
     super.key,
     required this.url,
-    this.title = "Login",
+    this.title = "Нэвтрэх",
     this.roomId,
     this.roomIdNum,
   });
@@ -120,7 +120,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(response.message ?? 'Амжилтгүй'),
+          content: Text(response.message ?? 'Амжилтгүй боллоо'),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 1),
         ),

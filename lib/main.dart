@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
+      title: 'Medsoft Track',
       theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
 
       home: FutureBuilder<Widget>(
@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(body: Center(child: CircularProgressIndicator()));
           } else if (snapshot.hasError) {
-            return const Scaffold(body: Center(child: Text("Error checking login status")));
+            return const Scaffold(body: Center(child: Text("Нэвтрэх төлөвийг шалгахад алдаа гарлаа")));
           } else if (snapshot.hasData) {
             return snapshot.data!;
           } else {
@@ -73,7 +73,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   late String _displayText = '';
-  String _liveLocation = "Fetching live location...";
+  String _liveLocation = "Байршил тогтоож байна...";
   final List<String> _locationHistory = [];
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
@@ -226,8 +226,8 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   Future<void> _showNotification() async {
     const AndroidNotificationDetails androidPlatformChannelSpecifics = AndroidNotificationDetails(
       'your_channel_id',
-      'your_channel_name',
-      channelDescription: 'Your channel description',
+      'Байршлын үйлчилгээ',
+      channelDescription: 'Байршил дамжуулах үйлчилгээний суваг',
       importance: Importance.max,
       priority: Priority.high,
       showWhen: false,

@@ -162,17 +162,17 @@ class MainActivity : FlutterActivity() {
     private fun showInitialPermissionDeniedDialog() {
 
         val builder = AlertDialog.Builder(this)
-        builder.setTitle("Location Permission Required")
+        builder.setTitle("Байршлын зөвшөөрөл шаардлагатай")
         builder.setMessage(
-            "Location access is essential for this feature. Please go to Settings to manually enable location access for the app."
+            "Энэхүү функцийг ашиглахад байршлын хандалт зайлшгүй шаардлагатай. Тохиргоо цэс рүү орж байршлын хандалтыг гараар идэвхжүүлнэ үү."
         )
-        builder.setPositiveButton("Open Settings") { _, _ ->
+        builder.setPositiveButton("Тохиргоо нээх") { _, _ ->
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
             val uri = Uri.fromParts("package", packageName, null)
             intent.data = uri
             startActivity(intent)
         }
-        builder.setNegativeButton("Cancel") { dialog, _ ->
+        builder.setNegativeButton("Цуцлах") { dialog, _ ->
             dialog.dismiss()
         }
         builder.create().show()
@@ -180,19 +180,17 @@ class MainActivity : FlutterActivity() {
 
     private fun showBackgroundLocationDialog(serviceAction: String) {
         val builder = AlertDialog.Builder(this)
-        builder.setTitle("Location Permission Needed")
+        builder.setTitle("Байршлын зөвшөөрөл шаардлагатай")
         builder.setMessage(
-            "To provide continuous location updates while the app is closed, " +
-                    "we need 'Allow all the time' location access. Please open Settings " +
-                    "and change the permission from 'Allow only while using the app' to 'Allow all the time'."
+            "Аппликешн хаалттай байх үед байршлыг тасралтгүй шинэчлэхийн тулд 'Үргэлж зөвшөөрөх' (Allow all the time) эрх шаардлагатай. Тохиргоо руу орж байршлын эрхийг 'Апп ашиглах үед' биш 'Үргэлж зөвшөөрөх' болгон өөрчилнө үү."
         )
-        builder.setPositiveButton("Open Settings") { _, _ ->
+        builder.setPositiveButton("Тохиргоо нээх") { _, _ ->
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
             val uri = Uri.fromParts("package", packageName, null)
             intent.data = uri
             startActivity(intent)
         }
-        builder.setNegativeButton("Cancel") { dialog, _ ->
+        builder.setNegativeButton("Цуцлах") { dialog, _ ->
             dialog.dismiss()
             Log.w(
                 "MainActivityTrack",

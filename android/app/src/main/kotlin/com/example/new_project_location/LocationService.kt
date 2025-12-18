@@ -92,9 +92,11 @@ class LocationService : Service() {
         val notificationIntent = Intent(this, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE)
 
+        val modeText = if (currentLocationMode == "activeRoom") "Идэвхтэй" else "Хүлээлгийн"
+
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Medsoft Track")
-            .setContentText("Байршил илгээгдэж байна... Mode: $currentLocationMode")
+            .setContentText("Байршил илгээгдэж байна... Төлөв: $modeText")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_LOW)
