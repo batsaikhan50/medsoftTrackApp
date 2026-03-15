@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_app_badger/flutter_app_badger.dart';
 import 'package:keyboard_actions/keyboard_actions.dart';
 import 'package:medsoft_track/api/auth_dao.dart';
-import 'package:medsoft_track/constants.dart';
 import 'package:medsoft_track/main.dart';
 import 'package:medsoft_track/webview_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -138,12 +137,10 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
     final response = await _authDao.getHospitals();
 
     setState(() {
-      // 2. Check for overall success (HTTP 200, and API 'success': true)
       if (response.success && response.data != null) {
-        // 3. Map the List<dynamic> data into the required List<Map<String, String>> format
-        final List<Map<String, String>> serverNames =
+        _serverNames =
             response.data!
-                .whereType<Map<String, dynamic>>() // Ensure we only process maps
+                .whereType<Map<String, dynamic>>()
                 .map<Map<String, String>>((server) {
                   return {
                     'name': server['name']?.toString() ?? '',
@@ -152,24 +149,9 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                   };
                 })
                 .toList();
-
-        _serverNames = serverNames;
-        _errorMessage = ''; // Clear any previous error
+        _errorMessage = '';
       } else {
-        // 4. Handle error cases
-        final String statusDetail =
-            response.statusCode != null ? ' (Статус: ${response.statusCode})' : '';
-
-        if (response.statusCode == 200) {
-          // API returned success: false (handled by response.message)
-          _errorMessage = response.message ?? 'Эмнэлгүүдийг дуудах үйлдэл амжилтгүй боллоо.';
-        } else if (response.message?.contains('Invalid response format') == true) {
-          // Network/parsing error (handled by DAO's catch block)
-          _errorMessage = 'Алдаа гарлаа: ${response.message}';
-        } else {
-          // HTTP error (non-200) or other generic failure
-          _errorMessage = 'Серверийн мэдээлэл авахад алдаа гарлаа$statusDetail.';
-        }
+        _errorMessage = response.message ?? 'Эмнэлгүүдийг дуудах үйлдэл амжилтгүй боллоо.';
       }
     });
   }
@@ -389,69 +371,51 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
       'password': _passwordLoginController.text,
     };
 
-    final headers = {
-      'X-Token': Constants.xToken,
-      'X-Tenant': _selectedRole?['name'] ?? '',
-      'Content-Type': 'application/json',
-    };
-
-    debugPrint('Request Headers: $headers');
     debugPrint('Request Body: ${json.encode(body)}');
 
-    try {
-      // final response = await http.post(
-      //   Uri.parse('${Constants.runnerUrl}/gateway/auth'),
-      //   headers: headers,
-      //   body: json.encode(body),
-      // );
+    final response = await _authDao.login(body);
+    debugPrint('Response Status: ${response.statusCode}');
 
-      final response = await _authDao.login(body);
-      debugPrint('Response Status: ${response.statusCode}');
-      debugPrint('Response Body: ${response.data}');
-
-      if (response.statusCode == 200) {
-        if (!(Platform.environment['SIMULATOR_DEVICE_NAME'] == 'iPhone SE (3rd generation)')) {
-          FlutterAppBadger.removeBadge();
-        } else {}
-
-        final Map<String, dynamic> data = response.data!;
-        if (response.success == true) {
-          SharedPreferences prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('isLoggedIn', true);
-
-          final String token = data['token'] ?? '';
-
-          await prefs.setString('X-Tenant', _selectedRole?['name'] ?? '');
-          await prefs.setString('X-Medsoft-Token', token);
-
-          debugPrint('Username controller: ${_usernameLoginController.text}');
-          await prefs.setString('Username', _usernameLoginController.text);
-
-          _loadSharedPreferencesData();
-
-          _isLoading = false;
-
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => MyHomePage(title: 'Дуудлагын жагсаалт')),
-          );
-        } else {
-          setState(() {
-            _errorMessage = 'Нэвтрэхэд амжилтгүй боллоо: ${response.message}';
-            _isLoading = false;
-          });
-        }
-      } else {
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('isLoggedIn', false);
-        setState(() {
-          _errorMessage = 'Нэвтрэх нэр эсвэл нууц үг буруу байна. Дахин оролдоно уу.';
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
+    if (response.statusCode == null) {
+      // Network error (no internet)
       setState(() {
-        _errorMessage = 'Алдаа гарлаа: $e';
+        _errorMessage = response.message ?? 'Интернет холболтоо шалгана уу.';
+        _isLoading = false;
+      });
+      return;
+    }
+
+    if (response.statusCode == 200 && response.success) {
+      if (!(Platform.environment['SIMULATOR_DEVICE_NAME'] == 'iPhone SE (3rd generation)')) {
+        FlutterAppBadger.removeBadge();
+      }
+
+      final Map<String, dynamic> data = response.data!;
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', true);
+      await prefs.setString('X-Tenant', _selectedRole?['name'] ?? '');
+      await prefs.setString('X-Medsoft-Token', data['token'] ?? '');
+      debugPrint('Username controller: ${_usernameLoginController.text}');
+      await prefs.setString('Username', _usernameLoginController.text);
+      _loadSharedPreferencesData();
+      setState(() => _isLoading = false);
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => MyHomePage(title: 'Дуудлагын жагсаалт')),
+      );
+    } else if (response.statusCode == 400) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', false);
+      setState(() {
+        _errorMessage = 'Нэвтрэх нэр эсвэл нууц үг буруу байна.';
+        _isLoading = false;
+      });
+    } else {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', false);
+      setState(() {
+        _errorMessage = response.message ?? 'Нэвтрэхэд алдаа гарлаа.';
         _isLoading = false;
       });
     }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -23,7 +24,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Medsoft Track',
       theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
-
+      builder: (context, child) => _ConnectivityBanner(child: child!),
       home: FutureBuilder<Widget>(
         future: _getInitialScreen(),
         builder: (context, snapshot) {
@@ -395,6 +396,66 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
         ),
       ),
       body: PatientListScreen(key: _patientListKey),
+    );
+  }
+}
+
+class _ConnectivityBanner extends StatefulWidget {
+  final Widget child;
+  const _ConnectivityBanner({required this.child});
+
+  @override
+  State<_ConnectivityBanner> createState() => _ConnectivityBannerState();
+}
+
+class _ConnectivityBannerState extends State<_ConnectivityBanner> {
+  bool _isOffline = false;
+  StreamSubscription<List<ConnectivityResult>>? _subscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _subscription = Connectivity().onConnectivityChanged.listen((results) {
+      final offline = results.isEmpty || results.every((r) => r == ConnectivityResult.none);
+      if (offline != _isOffline) {
+        setState(() => _isOffline = offline);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        widget.child,
+        if (_isOffline)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Material(
+              color: Colors.transparent,
+              child: SafeArea(
+                bottom: false,
+                child: Container(
+                  color: Colors.red,
+                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+                  child: const Text(
+                    'Интернет холболтоо шалгана уу.',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

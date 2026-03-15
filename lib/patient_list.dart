@@ -200,6 +200,7 @@ class PatientListScreenState extends State<PatientListScreen> {
           //   '${Constants.runnerUrl}/gateway/general/get/api/inpatient/ambulance/sendToMedsoftApp?roomId=$roomIdNum&patientPhone=$phone',
           // );
 
+<<<<<<< HEAD
           try {
             // final response = await http.get(
             //   uri,
@@ -235,13 +236,42 @@ class PatientListScreenState extends State<PatientListScreen> {
           } catch (e) {
             debugPrint('Send SMS error: $e');
             if (!mounted) return;
+=======
+          final response = await _mapDAO.sendSmsToPatient(roomId, phone);
+
+          if (response.success) {
+>>>>>>> f049cc8 (android running)
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Сүлжээний алдаа: $e'),
-                backgroundColor: Colors.red,
-                duration: const Duration(seconds: 1),
+              const SnackBar(
+                content: Text('Мессеж амжилттай илгээгдлээ'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 1),
               ),
             );
+            refreshPatients();
+          } else if (response.statusCode == null) {
+            // No internet
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(response.message ?? 'Интернет холболтоо шалгана уу.'),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          } else {
+            if (response.statusCode == 401 || response.statusCode == 403) {
+              _logOut();
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Системийн алдаа гарлаа. Мэдээллийн ажилтанд хандаж алдааг шалгуулна уу.',
+                  ),
+                  backgroundColor: Colors.red,
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            }
           }
         },
       ),

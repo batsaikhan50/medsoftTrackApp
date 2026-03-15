@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -72,6 +73,9 @@ abstract class BaseDAO {
       return _handleResponse<T>(response, parse: parse);
     } catch (e) {
       debugPrint('POST error: $e');
+      if (e is SocketException) {
+        return ApiResponse<T>(success: false, message: 'Интернет холболтоо шалгана уу.');
+      }
       return ApiResponse<T>(success: false, message: e.toString());
     }
   }
@@ -81,18 +85,20 @@ abstract class BaseDAO {
     RequestConfig config = const RequestConfig(),
     T Function(dynamic)? parse,
   }) async {
-    // try {
-    final headers = await _buildHeaders(config);
-    debugPrint('GET $url');
-    debugPrint('Headers: $headers');
+    try {
+      final headers = await _buildHeaders(config);
+      debugPrint('GET $url');
+      debugPrint('Headers: $headers');
 
-    final response = await http.get(Uri.parse(url), headers: headers);
-    final result = _handleResponse<T>(response, parse: parse);
-
-    return result;
-    // } catch (e) {
-    //   return ApiResponse<T>(success: false, message: e.toString());
-    // }
+      final response = await http.get(Uri.parse(url), headers: headers);
+      return _handleResponse<T>(response, parse: parse);
+    } catch (e) {
+      debugPrint('GET error: $e');
+      if (e is SocketException) {
+        return ApiResponse<T>(success: false, message: 'Интернет холболтоо шалгана уу.');
+      }
+      return ApiResponse<T>(success: false, message: e.toString());
+    }
   }
 
   Future<Map<String, String>> _buildHeaders(RequestConfig config) async {
