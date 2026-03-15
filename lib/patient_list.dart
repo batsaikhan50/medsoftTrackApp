@@ -167,7 +167,6 @@ class PatientListScreenState extends State<PatientListScreen> {
   // --- NEW HELPER METHOD 3: Send Message Button ---
   Widget _buildSendMessageButton(BuildContext context, dynamic patient, bool isTablet) {
     final roomId = patient['roomId'];
-    final roomIdNum = patient['_id'];
     final phone = patient['patientPhone'];
 
     final buttonLabel = "Мессеж илгээх";
@@ -201,6 +200,7 @@ class PatientListScreenState extends State<PatientListScreen> {
           // );
 
           final response = await _mapDAO.sendSmsToPatient(roomId, phone);
+          if (!context.mounted) return;
 
           if (response.success) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -264,7 +264,7 @@ class PatientListScreenState extends State<PatientListScreen> {
                   if (url != null && url.toString().startsWith('http')) {
                     try {
                       await platform.invokeMethod('sendRoomIdToAppDelegate', {'roomId': roomId});
-                      if (!mounted) return;
+                      if (!context.mounted) return;
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -301,12 +301,6 @@ class PatientListScreenState extends State<PatientListScreen> {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final prefs = snapshot.data!;
-        final xMedsoftToken = prefs.getString('X-Medsoft-Token') ?? '';
-        final tenantDomain = prefs.getString('tenantDomain') ?? '';
-
-        final isTablet = MediaQuery.of(context).size.shortestSide >= 600;
-
         return Scaffold(
           body:
               isLoading
@@ -316,7 +310,6 @@ class PatientListScreenState extends State<PatientListScreen> {
                     itemCount: patients.length,
                     itemBuilder: (context, index) {
                       final patient = patients[index];
-                      final roomId = patient['roomId'];
                       final arrived = patient['arrived'] ?? false;
                       final distance = patient['totalDistance'] ?? '';
                       final duration = patient['distotalDistancetance'] ?? '';
@@ -334,7 +327,6 @@ class PatientListScreenState extends State<PatientListScreen> {
                       final patientName = patientData['patientName'] ?? '';
                       final patientRegNo = patientData['patientRegNo'] ?? '';
                       final patientGender = patientData['patientGender'] ?? '';
-                      final patientSent = patient['patientSent'] ?? false;
 
                       final reportedCitizen = getValue('reportedCitizen');
                       final received = getValue('received');
@@ -366,10 +358,9 @@ class PatientListScreenState extends State<PatientListScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             elevation: 3,
                             margin: const EdgeInsets.symmetric(vertical: 6.0),
-                            child: Container(
-                              child: Theme(
-                                data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-                                child: ExpansionTile(
+                            child: Theme(
+                              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                              child: ExpansionTile(
                                   key: PageStorageKey(index),
                                   initiallyExpanded: false,
                                   tilePadding: const EdgeInsets.symmetric(
@@ -669,7 +660,6 @@ class PatientListScreenState extends State<PatientListScreen> {
                               ),
                             ),
                           ),
-                        ),
                       );
                     },
                   ),

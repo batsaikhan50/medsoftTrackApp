@@ -85,7 +85,6 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
   List<Map<String, String>> _serverNames = [];
   Map<String, dynamic> sharedPreferencesData = {};
 
-  Map<String, bool> _passwordRulesStatus = {};
   String? _passwordCheckValidationError;
   String? _regNoValidationError;
   String? _firstnameValidationError;
@@ -98,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
 
   @override
   void didChangeMetrics() {
-    final bottomInset = WidgetsBinding.instance.window.viewInsets.bottom;
+    final bottomInset = WidgetsBinding.instance.platformDispatcher.implicitView?.viewInsets.bottom ?? 0.0;
     final newValue = bottomInset > 0.0;
 
     if (_isKeyboardVisible != newValue) {
@@ -158,10 +157,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
 
   void _updatePasswordRules() {
     final password = _passwordController.text;
-    final rules = _validatePasswordRules(password);
-
     setState(() {
-      _passwordRulesStatus = rules;
       _passwordCheckValidationError = _validatePasswordMatch(
         password,
         _passwordCheckController.text,
@@ -220,7 +216,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
 
     _dragPosition =
         _selectedToggleIndex *
-        ((MediaQueryData.fromView(WidgetsBinding.instance.window).size.width - 32 - 8) / 2);
+        ((MediaQueryData.fromView(WidgetsBinding.instance.platformDispatcher.implicitView!).size.width - 32 - 8) / 2);
     _fetchServerData();
     _getInitialScreenString();
   }
@@ -239,49 +235,6 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
     });
   }
 
-  void _validateName() {
-    final firstname = _firstnameController.text.trim().toUpperCase();
-    final lastname = _lastnameController.text.trim().toUpperCase();
-
-    setState(() {
-      if (firstname.isEmpty) {
-        _firstnameValidationError = null;
-      } else if (!mongolianCyrillicRegex.hasMatch(firstname)) {
-        _firstnameValidationError = 'Кирилл үсгээр бичнэ үү.';
-      } else {
-        _firstnameValidationError = null;
-      }
-
-      if (lastname.isEmpty) {
-        _lastnameValidationError = null;
-      } else if (!mongolianCyrillicRegex.hasMatch(lastname)) {
-        _lastnameValidationError = 'Кирилл буруу байна';
-      } else {
-        _lastnameValidationError = null;
-      }
-    });
-  }
-
-  bool _validateRegisterInputs() {
-    final password = _passwordController.text;
-    final passwordMatchError = _validatePasswordMatch(password, _passwordCheckController.text);
-    final rules = _validatePasswordRules(password);
-
-    final regNo = _regNoController.text.trim().toUpperCase();
-    if (regNo.isEmpty || !_regNoRegex.hasMatch(regNo)) {
-      _regNoValidationError = 'Регистрын дугаар буруу байна';
-    } else {
-      _regNoValidationError = null;
-    }
-
-    setState(() {
-      _passwordRulesStatus = rules;
-      _passwordCheckValidationError = passwordMatchError;
-    });
-
-    final allPassed = rules.values.every((passed) => passed == true);
-    return allPassed && passwordMatchError == null && _regNoValidationError == null;
-  }
 
   // Future<void> _register() async {
   //   setState(() {
@@ -439,17 +392,6 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
     });
   }
 
-  Map<String, bool> _validatePasswordRules(String password) {
-    return {
-      'Нууц үгэнд дор хаяж нэг тоо байх ёстой': password.contains(RegExp(r'\d')),
-      'Нууц үгэнд дор хаяж нэг жижиг үсэг байх ёстой': password.contains(RegExp(r'[a-z]')),
-      'Нууц үгэнд дор хаяж нэг том үсэг байх ёстой': password.contains(RegExp(r'[A-Z]')),
-      'Нууц үгэнд дор хаяж нэг тусгай тэмдэгт байх ёстой': password.contains(
-        RegExp(r"[!@#&()\[\]{}:;',?/*~$^+=<>]"),
-      ),
-      'Нууц үгийн урт 10-35 тэмдэгт байх ёстой': password.length >= 10 && password.length <= 35,
-    };
-  }
 
   String? _validatePasswordMatch(String password, String confirmPassword) {
     if (password != confirmPassword) {
@@ -616,16 +558,6 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
     );
   }
 
-  void _scrollIntoView(FocusNode focusNode) {
-    final context = focusNode.context;
-    if (context != null) {
-      Scrollable.ensureVisible(
-        context,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -1005,6 +937,7 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
                         String? hospital = _selectedRole?['name'];
 
                         if (baseUrl != null && baseUrl.isNotEmpty && hospital != null) {
+                          if (!mounted) return;
                           Navigator.push(
                             context,
                             MaterialPageRoute(

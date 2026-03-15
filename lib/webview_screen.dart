@@ -1,10 +1,6 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 import 'package:medsoft_track/api/map_dao.dart';
-import 'package:medsoft_track/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -65,6 +61,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('arrivedInFifty', arrived);
 
+        if (!mounted) return;
         setState(() {
           arrivedInFifty = arrived;
         });
@@ -106,6 +103,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
   Future<void> _markArrived(String id) async {
     final response = await _mapDAO.sendArrivedToPatient(id);
 
+    if (!mounted) return;
     if (response.success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -116,6 +114,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
       );
 
       await platform.invokeMethod('startIdleLocation');
+      if (!mounted) return;
       Navigator.of(context).pop();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -196,7 +195,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
                         width: MediaQuery.of(context).size.width * 1,
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
+                          color: Colors.black.withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Column(

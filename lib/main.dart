@@ -73,8 +73,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
-  late String _displayText = '';
-  String _liveLocation = "Байршил тогтоож байна...";
   final List<String> _locationHistory = [];
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
@@ -87,11 +85,6 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   static const String xToken = Constants.xToken;
   Map<String, dynamic> sharedPreferencesData = {};
 
-  late AnimationController _animationController;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _fadeAnimation;
-  bool _isLocationSent = false;
-
   @override
   void initState() {
     super.initState();
@@ -101,26 +94,6 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     _loadSharedPreferencesData();
     _sendXServerToAppDelegate();
     _sendXMedsoftTokenToAppDelegate();
-
-    _animationController = AnimationController(vsync: this, duration: Duration(milliseconds: 500));
-
-    _slideAnimation = Tween<Offset>(
-      begin: Offset(0, 1),
-      end: Offset(0, 0),
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOut));
-
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 0.8,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
-  }
-
-  Future<void> _startLocationTracking() async {
-    try {
-      await platform.invokeMethod('startLocationManagerAfterLogin');
-    } on PlatformException catch (e) {
-      debugPrint("Error starting location manager: $e");
-    }
   }
 
   Future<void> _sendXServerToAppDelegate() async {
@@ -147,30 +120,6 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     }
   }
 
-  Future<void> _getInitialScreenString() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-
-    String? xServer = prefs.getString('X-Tenant');
-    bool isGotToken = xServer != null && xServer.isNotEmpty;
-
-    String? xMedsoftServer = prefs.getString('X-Medsoft-Token');
-    bool isGotMedsoftToken = xMedsoftServer != null && xMedsoftServer.isNotEmpty;
-
-    String? username = prefs.getString('Username');
-    bool isGotUsername = username != null && username.isNotEmpty;
-
-    _displayText =
-        'isLoggedIn: $isLoggedIn, isGotToken: $isGotToken, isGotMedsoftToken: $isGotMedsoftToken, isGotUsername: $isGotUsername';
-
-    if (isLoggedIn && isGotToken && isGotMedsoftToken && isGotUsername) {
-      debugPrint(
-        'isLoggedIn: $isLoggedIn, isGotToken: $isGotToken, isGotMedsoftToken: $isGotMedsoftToken, isGotUsername: $isGotUsername',
-      );
-    } else {
-      return debugPrint("empty shared");
-    }
-  }
 
   Future<void> _loadSharedPreferencesData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -215,7 +164,6 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       final longitude = locationData['longitude'];
 
       setState(() {
-        _liveLocation = "Сүүлд илгээсэн байршил\nУртраг: $longitude\nӨргөрөг: $latitude";
         _addLocationToHistory(latitude, longitude);
       });
     } else if (call.method == 'navigateToLogin') {
@@ -252,26 +200,6 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
     );
   }
 
-  Future<void> _sendLocationByButton() async {
-    try {
-      await platform.invokeMethod('sendLocationToAPIByButton');
-
-      setState(() {
-        _isLocationSent = true;
-      });
-
-      _animationController.forward();
-
-      await Future.delayed(Duration(seconds: 2));
-
-      setState(() {
-        _isLocationSent = false;
-      });
-      _animationController.reverse();
-    } on PlatformException catch (e) {
-      debugPrint("Failed to send xToken to AppDelegate: '${e.message}'.");
-    }
-  }
 
   Future<void> _sendXTokenToAppDelegate() async {
     try {
@@ -311,6 +239,7 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
       debugPrint("Failed to stop location updates: '${e.message}'.");
     }
 
+    if (!mounted) return;
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginScreen()));
   }
 
