@@ -200,47 +200,9 @@ class PatientListScreenState extends State<PatientListScreen> {
           //   '${Constants.runnerUrl}/gateway/general/get/api/inpatient/ambulance/sendToMedsoftApp?roomId=$roomIdNum&patientPhone=$phone',
           // );
 
-<<<<<<< HEAD
-          try {
-            // final response = await http.get(
-            //   uri,
-            //   headers: {
-            //     'X-Medsoft-Token': token,
-            //     'X-Tenant': server == 'Citizen' ? 'ui.medsoft.care' : server,
-            //     'X-Token': Constants.xToken,
-            //   },
-            // );
-            final response = await _mapDAO.sendSmsToPatient(roomId, phone);
-            if (!mounted) return;
-            if (response.success) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Мессеж амжилттай илгээгдлээ'),
-                  backgroundColor: Colors.green,
-                  duration: Duration(seconds: 1),
-                ),
-              );
-              refreshPatients();
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(response.message ?? 'Алдаа гарлаа'),
-                  backgroundColor: Colors.red,
-                  duration: const Duration(seconds: 1),
-                ),
-              );
-              if (response.statusCode == 401 || response.statusCode == 403) {
-                _logOut();
-              }
-            }
-          } catch (e) {
-            debugPrint('Send SMS error: $e');
-            if (!mounted) return;
-=======
           final response = await _mapDAO.sendSmsToPatient(roomId, phone);
 
           if (response.success) {
->>>>>>> f049cc8 (android running)
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Мессеж амжилттай илгээгдлээ'),
