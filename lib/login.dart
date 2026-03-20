@@ -97,7 +97,8 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
 
   @override
   void didChangeMetrics() {
-    final bottomInset = WidgetsBinding.instance.platformDispatcher.implicitView?.viewInsets.bottom ?? 0.0;
+    final bottomInset =
+        WidgetsBinding.instance.platformDispatcher.implicitView?.viewInsets.bottom ?? 0.0;
     final newValue = bottomInset > 0.0;
 
     if (_isKeyboardVisible != newValue) {
@@ -138,16 +139,13 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
     setState(() {
       if (response.success && response.data != null) {
         _serverNames =
-            response.data!
-                .whereType<Map<String, dynamic>>()
-                .map<Map<String, String>>((server) {
-                  return {
-                    'name': server['name']?.toString() ?? '',
-                    'fullName': server['fullName']?.toString() ?? '',
-                    'domain': server['domain']?.toString() ?? '',
-                  };
-                })
-                .toList();
+            response.data!.whereType<Map<String, dynamic>>().map<Map<String, String>>((server) {
+              return {
+                'name': server['name']?.toString() ?? '',
+                'fullName': server['fullName']?.toString() ?? '',
+                'domain': server['domain']?.toString() ?? '',
+              };
+            }).toList();
         _errorMessage = '';
       } else {
         _errorMessage = response.message ?? 'Эмнэлгүүдийг дуудах үйлдэл амжилтгүй боллоо.';
@@ -216,7 +214,12 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
 
     _dragPosition =
         _selectedToggleIndex *
-        ((MediaQueryData.fromView(WidgetsBinding.instance.platformDispatcher.implicitView!).size.width - 32 - 8) / 2);
+        ((MediaQueryData.fromView(
+                  WidgetsBinding.instance.platformDispatcher.implicitView!,
+                ).size.width -
+                32 -
+                8) /
+            2);
     _fetchServerData();
     _getInitialScreenString();
   }
@@ -234,7 +237,6 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
       }
     });
   }
-
 
   // Future<void> _register() async {
   //   setState(() {
@@ -328,6 +330,8 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
 
     final response = await _authDao.login(body);
     debugPrint('Response Status: ${response.statusCode}');
+    debugPrint('Response Success: ${response.success}');
+    debugPrint('Response Message: ${response.message}');
 
     if (response.statusCode == null) {
       // Network error (no internet)
@@ -364,11 +368,19 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
         _errorMessage = 'Нэвтрэх нэр эсвэл нууц үг буруу байна.';
         _isLoading = false;
       });
+    } else if (response.statusCode == 200 && !response.success) {
+      // Response 200 but success is false - show generic error instead of nested JSON
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', false);
+      setState(() {
+        _errorMessage = 'Системийн алдаа гарлаа. Мэдээллийн ажилтанд хандаж алдааг шалгуулна уу.';
+        _isLoading = false;
+      });
     } else {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setBool('isLoggedIn', false);
       setState(() {
-        _errorMessage = response.message ?? 'Нэвтрэхэд алдаа гарлаа.';
+        _errorMessage = 'Системийн алдаа гарлаа. Мэдээллийн ажилтанд хандаж алдааг шалгуулна уу.';
         _isLoading = false;
       });
     }
@@ -391,7 +403,6 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
       sharedPreferencesData = data;
     });
   }
-
 
   String? _validatePasswordMatch(String password, String confirmPassword) {
     if (password != confirmPassword) {
@@ -557,7 +568,6 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
       ],
     );
   }
-
 
   @override
   Widget build(BuildContext context) {

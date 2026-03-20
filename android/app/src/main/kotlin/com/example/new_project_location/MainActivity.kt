@@ -2,10 +2,12 @@ package com.example.new_project_location
 
 import android.Manifest
 import android.app.AlertDialog
+import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -14,6 +16,7 @@ import android.provider.Settings
 import android.util.Log
 import androidx.annotation.NonNull
 import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -31,11 +34,18 @@ class MainActivity : FlutterActivity() {
     private var xServer: String? = null
     private var xMedsoftToken: String? = null
     private var currentRoomId: String? = null
+    private var didRequestBackgroundLocationPermission = false
+    private var lastLocationAuthorizationStatus: Int? = null
+    private var pendingServiceAction: String? = null
 
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1
+        private const val BACKGROUND_LOCATION_PERMISSION_REQUEST_CODE = 3
+        private const val NOTIFICATION_PERMISSION_REQUEST_CODE = 2
         private const val RECEIVER_ACTION = "com.example.new_project_location.FLUTTER_COMMUNICATION"
     }
+    
+    private lateinit var sharedPreferences: SharedPreferences
 
     // New: Broadcast Receiver for Service-to-Flutter communication (e.g., navigateToLogin)
     private val locationServiceReceiver = object : BroadcastReceiver() {
@@ -54,6 +64,10 @@ class MainActivity : FlutterActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Initialize SharedPreferences
+        sharedPreferences = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
+        
         val filter = IntentFilter(RECEIVER_ACTION)
         // Ensure receiver registration is compatible with modern Android
         ContextCompat.registerReceiver(
@@ -62,6 +76,16 @@ class MainActivity : FlutterActivity() {
             filter,
             ContextCompat.RECEIVER_NOT_EXPORTED
         )
+        
+        // Get initial location authorization status
+        lastLocationAuthorizationStatus = getLocationAuthorizationStatus()
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // Similar to iOS's applicationDidBecomeActive
+        checkLocationAuthorizationAndPromptIfNeeded()
+        checkNotificationPermissionAndPromptIfNeeded()
     }
 
     override fun onDestroy() {
@@ -140,6 +164,112 @@ class MainActivity : FlutterActivity() {
         result.success(null)
     }
 
+    // ========== Location Permission Methods (Similar to iOS) ==========
+
+    private fun getLocationAuthorizationStatus(): Int {
+        return when {
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                    ContextCompat.checkSelfPermission(
+                        this,
+                        Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                    ) == PackageManager.PERMISSION_GRANTED
+                ) {
+                    2 // Authorized Always
+                } else {
+                    1 // Authorized When In Use
+                }
+            }
+            ActivityCompat.shouldShowRequestPermissionRationale(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) -> 0 // Not Determined
+            else -> -1 // Denied or Restricted
+        }
+    }
+
+    private fun checkLocationAuthorizationAndPromptIfNeeded() {
+        val currentStatus = getLocationAuthorizationStatus()
+        
+        // Check if status changed from "Always" to "When In Use"
+        if (lastLocationAuthorizationStatus == 2 && currentStatus == 1) {
+            showLocationPermissionDialog()
+            lastLocationAuthorizationStatus = currentStatus
+            return
+        }
+        
+        lastLocationAuthorizationStatus = currentStatus
+    }
+
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                NOTIFICATION_PERMISSION_REQUEST_CODE
+            )
+        }
+    }
+
+    private fun getNotificationPermissionStatus(): Int {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            )) {
+                PackageManager.PERMISSION_GRANTED -> 2 // Authorized
+                else -> -1 // Denied or Not Determined
+            }
+        } else {
+            // Pre-API 33: Check notification settings
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            if (notificationManager.areNotificationsEnabled()) {
+                2 // Authorized
+            } else {
+                -1 // Denied
+            }
+        }
+    }
+
+    private fun checkNotificationPermissionAndPromptIfNeeded() {
+        val isLoggedIn = sharedPreferences.getBoolean("flutter.isLoggedIn", false)
+        
+        if (!isLoggedIn) {
+            Log.d("MainActivityTrack", "User not logged in, skipping notification permission check")
+            return
+        }
+        
+        when (getNotificationPermissionStatus()) {
+            -1 -> showNotificationPermissionDialog() // Denied - show dialog
+            0 -> {
+                // Not Determined - request directly
+                requestNotificationPermission()
+            }
+            else -> Log.d("MainActivityTrack", "Notification permission already granted")
+        }
+    }
+
+    private fun showNotificationPermissionDialog() {
+        // Show native permission dialog for notifications (Android 13+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                NOTIFICATION_PERMISSION_REQUEST_CODE
+            )
+        } else {
+            // For older Android versions, open notification settings
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+            val uri = Uri.fromParts("package", packageName, null)
+            intent.data = uri
+            startActivity(intent)
+        }
+    }
+
     // --- Location Permission Logic from Patient App ---
 
     private fun checkLocationPermission(): Boolean {
@@ -160,54 +290,56 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun showInitialPermissionDeniedDialog() {
-
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Байршлын зөвшөөрөл шаардлагатай")
-        builder.setMessage(
-            "Энэхүү функцийг ашиглахад байршлын хандалт зайлшгүй шаардлагатай. Тохиргоо цэс рүү орж байршлын хандалтыг гараар идэвхжүүлнэ үү."
-        )
-        builder.setPositiveButton("Тохиргоо нээх") { _, _ ->
-            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-            val uri = Uri.fromParts("package", packageName, null)
-            intent.data = uri
-            startActivity(intent)
-        }
-        builder.setNegativeButton("Цуцлах") { dialog, _ ->
-            dialog.dismiss()
-        }
-        builder.create().show()
+        // Open app settings directly - user can grant permission there
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+        val uri = Uri.fromParts("package", packageName, null)
+        intent.data = uri
+        startActivity(intent)
     }
 
     private fun showBackgroundLocationDialog(serviceAction: String) {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Байршлын зөвшөөрөл шаардлагатай")
-        builder.setMessage(
-            "Аппликешн хаалттай байх үед байршлыг тасралтгүй шинэчлэхийн тулд 'Үргэлж зөвшөөрөх' (Allow all the time) эрх шаардлагатай. Тохиргоо руу орж байршлын эрхийг 'Апп ашиглах үед' биш 'Үргэлж зөвшөөрөх' болгон өөрчилнө үү."
-        )
-        builder.setPositiveButton("Тохиргоо нээх") { _, _ ->
-            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-            val uri = Uri.fromParts("package", packageName, null)
-            intent.data = uri
-            startActivity(intent)
-        }
-        builder.setNegativeButton("Цуцлах") { dialog, _ ->
-            dialog.dismiss()
-            Log.w(
-                "MainActivityTrack",
-                "Background location denied. Starting service with limited (When In Use) permission."
-            )
-            // Start the service with limited permission (Foreground only)
+        // Show Material AlertDialog guiding user to enable "always" location in settings
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            AlertDialog.Builder(this)
+                .setTitle("Location Permission")
+                .setMessage("To enable continuous tracking, please allow \"Always\" location permission in settings.")
+                .setPositiveButton("Open Settings") { _, _ ->
+                    // Open app settings to location permission page
+                    startActivity(Intent().apply {
+                        action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                        data = Uri.fromParts("package", packageName, null)
+                    })
+                    // Start service anyway with foreground permission
+                    startLocationService(serviceAction)
+                }
+                .setNegativeButton("Continue Without") { _, _ ->
+                    // Start service with only foreground location
+                    startLocationService(serviceAction)
+                }
+                .setCancelable(false)
+                .show()
+        } else {
+            // Pre-Q doesn't have background location permission
             startLocationService(serviceAction)
         }
-        builder.create().show()
+    }
+
+    private fun showLocationPermissionDialog() {
+        // Open app settings when user downgrades permission
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+        val uri = Uri.fromParts("package", packageName, null)
+        intent.data = uri
+        startActivity(intent)
     }
 
     private fun checkBackgroundLocationPermissionAndStartService(serviceAction: String) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !isBackgroundLocationGranted()) {
-            // Android Q+ and Background Location is NOT granted, show the guide dialog
-            showBackgroundLocationDialog(serviceAction)
+        // If background location is already granted or not supported, just start service
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || isBackgroundLocationGranted()) {
+            startLocationService(serviceAction)
         } else {
-            // Older Android version or permission is granted
+            // Background location not granted on Q+ - it will be requested in onResume()
+            // For now, start service with foreground permission
+            Log.d("MainActivityTrack", "Background location not granted, starting with foreground only")
             startLocationService(serviceAction)
         }
     }
@@ -223,44 +355,15 @@ class MainActivity : FlutterActivity() {
             return
         }
 
-        // Case 2: Permission is not granted.
-        val shouldShowRationale = ActivityCompat.shouldShowRequestPermissionRationale(
+        // Case 2: Permission is not granted - request foreground location first
+        pendingServiceAction = serviceAction
+        
+        ActivityCompat.requestPermissions(
             this,
-            Manifest.permission.ACCESS_FINE_LOCATION
+            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+            LOCATION_PERMISSION_REQUEST_CODE
         )
-
-        if (shouldShowRationale) {
-            // Temporary denial or first run rationale—show OS prompt
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                LOCATION_PERMISSION_REQUEST_CODE
-            )
-            // Store call for later execution
-            // We don't use pendingCall/Result here because the result will be handled in onRequestPermissionsResult
-        } else {
-            // Permission permanently denied OR first ever run.
-            val isPermanentlyDenied = ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-
-            if (isPermanentlyDenied) {
-                showInitialPermissionDeniedDialog() // Guide user to settings
-                result.error(
-                    "PERMISSION_DENIED_PERMANENTLY",
-                    "Location permission permanently denied. Guide shown.",
-                    null
-                )
-            } else {
-                // If rationale is false but permission is not yet denied (first run only)
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                    LOCATION_PERMISSION_REQUEST_CODE
-                )
-            }
-        }
+        result.success(null)
     }
 
     override fun onRequestPermissionsResult(
@@ -274,21 +377,36 @@ class MainActivity : FlutterActivity() {
             val fineLocationGranted =
                 grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
 
-            // The service action is not readily available here, but we can assume the user wants to start tracking
-            // and handle the start logic inside checkBackgroundLocationPermissionAndStartService
-            // For simplicity, we assume 'start' is the default action after granting permission.
-            // If the application requires a specific action (start or startIdle), you'll need to store it in a temporary variable.
-
-            // Re-evaluating the user's original request: "startLocationManagerAfterLogin" or "startIdleLocation".
-            // Since we can't reliably know which one was originally called, we'll need to refactor Flutter to call a single 'requestPermissionAndStart' method
-            // with the desired action as an argument. For now, we'll prompt the user again or assume 'start' (activeRoom).
-
             if (fineLocationGranted) {
-                // Foreground permission was granted, now check for (and prompt for) Background Location
-                checkBackgroundLocationPermissionAndStartService("start") // Assuming 'start' if permission is granted
+                // Foreground location granted
+                val action = pendingServiceAction ?: "start"
+                
+                // Check if we should ask for background location
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !isBackgroundLocationGranted()) {
+                    // Show custom dialog to guide user to enable "always" location in settings
+                    showBackgroundLocationDialog(action)
+                } else {
+                    // Already has background or pre-Q
+                    startLocationService(action)
+                }
+                pendingServiceAction = null
             } else {
                 Log.e("MainActivityTrack", "Location permission denied. Cannot start service.")
-                methodChannel.invokeMethod("permissionDenied", null) // Inform Flutter
+                methodChannel.invokeMethod("permissionDenied", null)
+            }
+        } else if (requestCode == BACKGROUND_LOCATION_PERMISSION_REQUEST_CODE) {
+            // Background location permission response
+            val backgroundGranted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+            if (backgroundGranted) {
+                Log.d("MainActivityTrack", "Background location permission granted")
+            } else {
+                Log.d("MainActivityTrack", "Background location permission denied or not granted")
+            }
+        } else if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Log.d("MainActivityTrack", "Notification permission granted")
+            } else {
+                Log.d("MainActivityTrack", "Notification permission denied")
             }
         }
     }
@@ -309,5 +427,10 @@ class MainActivity : FlutterActivity() {
         } else {
             startService(intent)
         }
+    }
+
+    private fun clearSharedPreferencesAndNavigateToLogin() {
+        Log.d("MainActivityTrack", "clearSharedPreferencesAndNavigateToLogin")
+        methodChannel.invokeMethod("navigateToLogin", null)
     }
 }

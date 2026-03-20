@@ -116,12 +116,30 @@ class _WebViewScreenState extends State<WebViewScreen> {
       await platform.invokeMethod('startIdleLocation');
       if (!mounted) return;
       Navigator.of(context).pop();
-    } else {
+    } else if (response.statusCode == null) {
+      // No internet
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(response.message ?? 'Амжилтгүй боллоо'),
+          content: Text(response.message ?? 'Интернет холболтоо шалгана уу.'),
           backgroundColor: Colors.red,
-          duration: const Duration(seconds: 1),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } else if (response.statusCode == 200 && !response.success) {
+      // Response 200 but success is false - show generic error
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Системийн алдаа гарлаа. Мэдээллийн ажилтанд хандаж алдааг шалгуулна уу.'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Системийн алдаа гарлаа. Мэдээллийн ажилтанд хандаж алдааг шалгуулна уу.'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
         ),
       );
     }
