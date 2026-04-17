@@ -1,4 +1,4 @@
-package com.example.new_project_location
+package com.batsaikhan.medsofttrack
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -43,7 +43,7 @@ class LocationService : Service() {
         private const val CHANNEL_ID = "location_service_channel"
         private const val LOCATION_INTERVAL = 10000L // 10 seconds
         private const val FASTEST_LOCATION_INTERVAL = 5000L // 5 seconds
-        private const val FLUTTER_COMMUNICATION_ACTION = "com.example.new_project_location.FLUTTER_COMMUNICATION"
+        private const val FLUTTER_COMMUNICATION_ACTION = "com.batsaikhan.medsofttrack.FLUTTER_COMMUNICATION"
     }
 
     // New: OkHttpClient instance
@@ -200,7 +200,7 @@ class LocationService : Service() {
             .addHeader("X-Token", xToken!!)
             .addHeader("X-Tenant", xServer!!)
             .addHeader("X-Medsoft-Token", xMedsoftToken!!)
-            .addHeader("Authorization", "Bearer $xMedsoftToken") // Note: Redundant X-Medsoft-Token is present here
+            .addHeader("Authorization", "Bearer $xMedsoftToken")
             .build()
         // --- End Track App specific headers ---
 

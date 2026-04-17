@@ -391,10 +391,8 @@ class PatientListScreenState extends State<PatientListScreen> {
                                         maxLines: 1,
                                       ),
                                     const SizedBox(height: 8),
-                                    Padding(
-                                      padding: EdgeInsets.only(right: isNarrowScreen ? 0 : 100.0),
-                                      child: Row(
-                                        mainAxisAlignment: mainAxisAlignment,
+                                    Row(
+                                        mainAxisAlignment: MainAxisAlignment.start,
                                         children: [
                                           // Button 1: Үзлэг (40% on narrow, content-sized on wide)
                                           isNarrowScreen
@@ -602,7 +600,6 @@ class PatientListScreenState extends State<PatientListScreen> {
                                         //   ),
                                         // ],
                                       ),
-                                    ),
                                   ],
                                 ),
                                 childrenPadding: const EdgeInsets.all(16.0),

@@ -1,4 +1,4 @@
-package com.example.new_project_location
+package com.batsaikhan.medsofttrack
 
 import android.Manifest
 import android.app.AlertDialog
@@ -42,9 +42,9 @@ class MainActivity : FlutterActivity() {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 1
         private const val BACKGROUND_LOCATION_PERMISSION_REQUEST_CODE = 3
         private const val NOTIFICATION_PERMISSION_REQUEST_CODE = 2
-        private const val RECEIVER_ACTION = "com.example.new_project_location.FLUTTER_COMMUNICATION"
+        private const val RECEIVER_ACTION = "com.batsaikhan.medsofttrack.FLUTTER_COMMUNICATION"
     }
-    
+
     private lateinit var sharedPreferences: SharedPreferences
 
     // New: Broadcast Receiver for Service-to-Flutter communication (e.g., navigateToLogin)
@@ -64,10 +64,10 @@ class MainActivity : FlutterActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
         // Initialize SharedPreferences
         sharedPreferences = getSharedPreferences("FlutterSharedPreferences", Context.MODE_PRIVATE)
-        
+
         val filter = IntentFilter(RECEIVER_ACTION)
         // Ensure receiver registration is compatible with modern Android
         ContextCompat.registerReceiver(
@@ -76,11 +76,11 @@ class MainActivity : FlutterActivity() {
             filter,
             ContextCompat.RECEIVER_NOT_EXPORTED
         )
-        
+
         // Get initial location authorization status
         lastLocationAuthorizationStatus = getLocationAuthorizationStatus()
     }
-    
+
     override fun onResume() {
         super.onResume()
         // Similar to iOS's applicationDidBecomeActive
@@ -193,14 +193,14 @@ class MainActivity : FlutterActivity() {
 
     private fun checkLocationAuthorizationAndPromptIfNeeded() {
         val currentStatus = getLocationAuthorizationStatus()
-        
+
         // Check if status changed from "Always" to "When In Use"
         if (lastLocationAuthorizationStatus == 2 && currentStatus == 1) {
             showLocationPermissionDialog()
             lastLocationAuthorizationStatus = currentStatus
             return
         }
-        
+
         lastLocationAuthorizationStatus = currentStatus
     }
 
@@ -237,12 +237,12 @@ class MainActivity : FlutterActivity() {
 
     private fun checkNotificationPermissionAndPromptIfNeeded() {
         val isLoggedIn = sharedPreferences.getBoolean("flutter.isLoggedIn", false)
-        
+
         if (!isLoggedIn) {
             Log.d("MainActivityTrack", "User not logged in, skipping notification permission check")
             return
         }
-        
+
         when (getNotificationPermissionStatus()) {
             -1 -> showNotificationPermissionDialog() // Denied - show dialog
             0 -> {
@@ -357,7 +357,7 @@ class MainActivity : FlutterActivity() {
 
         // Case 2: Permission is not granted - request foreground location first
         pendingServiceAction = serviceAction
-        
+
         ActivityCompat.requestPermissions(
             this,
             arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
@@ -380,7 +380,7 @@ class MainActivity : FlutterActivity() {
             if (fineLocationGranted) {
                 // Foreground location granted
                 val action = pendingServiceAction ?: "start"
-                
+
                 // Check if we should ask for background location
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !isBackgroundLocationGranted()) {
                     // Show custom dialog to guide user to enable "always" location in settings
