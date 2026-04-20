@@ -12,6 +12,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'login.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.manual,
+    overlays: SystemUiOverlay.values,
+  );
   runApp(const MyApp());
 }
 
@@ -297,34 +302,41 @@ class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
               ),
             ),
 
-            Container(
-              margin: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color.fromARGB(255, 217, 83, 96),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: ListTile(
-                title: const Center(
-                  child: Text(
-                    'Гарах',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+            SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: const Color.fromARGB(255, 217, 83, 96),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: ListTile(
+                      title: const Center(
+                        child: Text(
+                          'Гарах',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      onTap: () {
+                        _logOut();
+                      },
                     ),
                   ),
-                ),
-                onTap: () {
-                  _logOut();
-                },
+                  const SizedBox(height: 10),
+                ],
               ),
             ),
-
-            const SizedBox(height: 10),
           ],
         ),
       ),
-      body: PatientListScreen(key: _patientListKey),
+      body: SafeArea(top: false, child: PatientListScreen(key: _patientListKey)),
     );
   }
 }
