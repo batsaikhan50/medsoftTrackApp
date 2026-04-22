@@ -204,34 +204,34 @@ class _WebViewScreenState extends State<WebViewScreen> {
               ? Stack(
                 children: [
                   WebViewWidget(controller: _controller),
-                  Positioned(
-                    bottom: 250,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: Container(
-                        width: MediaQuery.of(context).size.width * 1,
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.6),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children:
-                              activeLocationLogs
-                                  .map(
-                                    (log) => Text(
-                                      log,
-                                      style: const TextStyle(color: Colors.white, fontSize: 15),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  )
-                                  .toList(),
-                        ),
-                      ),
-                    ),
-                  ),
+                  // Positioned(
+                  //   bottom: 250,
+                  //   left: 0,
+                  //   right: 0,
+                  //   child: Center(
+                  //     child: Container(
+                  //       width: MediaQuery.of(context).size.width * 1,
+                  //       padding: const EdgeInsets.all(8),
+                  //       decoration: BoxDecoration(
+                  //         color: Colors.black.withValues(alpha: 0.6),
+                  //         borderRadius: BorderRadius.circular(12),
+                  //       ),
+                  //       child: Column(
+                  //         mainAxisSize: MainAxisSize.min,
+                  //         children:
+                  //             activeLocationLogs
+                  //                 .map(
+                  //                   (log) => Text(
+                  //                     log,
+                  //                     style: const TextStyle(color: Colors.white, fontSize: 15),
+                  //                     textAlign: TextAlign.center,
+                  //                   ),
+                  //                 )
+                  //                 .toList(),
+                  //       ),
+                  //     ),
+                  //   ),
+                  // ),
 
                   Positioned(
                     top: 10,
