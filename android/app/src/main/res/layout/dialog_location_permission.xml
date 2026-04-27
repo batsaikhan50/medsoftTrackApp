@@ -141,7 +141,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="3dp"
-                    android:text="2. Location → Always"
+                    android:text="2. Location → Always (Allow all the time)"
                     android:textSize="11sp"
                     android:textColor="#333333" />
 
