@@ -34,8 +34,6 @@ class _WebViewScreenState extends State<WebViewScreen> {
   void initState() {
     super.initState();
 
-    platform.invokeMethod('startLocationManagerAfterLogin');
-
     _controller =
         WebViewController()
           ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -52,6 +50,10 @@ class _WebViewScreenState extends State<WebViewScreen> {
         },
       ),
     );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showLocationDisclosure();
+    });
 
     platform.setMethodCallHandler((call) async {
       if (call.method == 'arrivedInFiftyReached') {
@@ -98,6 +100,42 @@ class _WebViewScreenState extends State<WebViewScreen> {
         }
       }
     });
+  }
+
+  Future<void> _showLocationDisclosure() async {
+    final accepted = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Байршлын мэдээлэл ашиглах'),
+        content: const Text(
+          'Medsoft Track апп нь таны байршлын мэдээллийг тасралтгүй цуглуулж, '
+          'эмнэлгийн диспетчерийн системд дамжуулна.\n\n'
+          '• Цуглуулах мэдээлэл: GPS байршил\n'
+          '• Ашиглах зорилго: Дуудлагын маршрут хянах\n'
+          '• Хуваалцах: Эмнэлгийн диспетчерийн систем\n'
+          '• Горим: Апп ажиллаж байх үед тасралтгүй\n\n'
+          'Үргэлжлүүлэхийн тулд "Зөвшөөрөх" товчийг дарна уу.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Болих'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Зөвшөөрөх'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+    if (accepted == true) {
+      await platform.invokeMethod('startLocationManagerAfterLogin');
+    } else {
+      Navigator.of(context).pop();
+    }
   }
 
   Future<void> _markArrived(String id) async {

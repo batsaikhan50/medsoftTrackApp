@@ -14,6 +14,9 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
+import android.view.LayoutInflater
+import android.view.WindowManager
+import android.widget.Button
 import androidx.annotation.NonNull
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
@@ -298,28 +301,32 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun showBackgroundLocationDialog(serviceAction: String) {
-        // Show Material AlertDialog guiding user to enable "always" location in settings
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            AlertDialog.Builder(this)
-                .setTitle("Location Permission")
-                .setMessage("To enable continuous tracking, please allow \"Always\" location permission in settings.")
-                .setPositiveButton("Open Settings") { _, _ ->
-                    // Open app settings to location permission page
-                    startActivity(Intent().apply {
-                        action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-                        data = Uri.fromParts("package", packageName, null)
-                    })
-                    // Start service anyway with foreground permission
-                    startLocationService(serviceAction)
-                }
-                .setNegativeButton("Continue Without") { _, _ ->
-                    // Start service with only foreground location
-                    startLocationService(serviceAction)
-                }
+            val view = LayoutInflater.from(this).inflate(R.layout.dialog_location_permission, null)
+            val dialog = AlertDialog.Builder(this)
+                .setView(view)
                 .setCancelable(false)
-                .show()
+                .create()
+            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+            view.findViewById<Button>(R.id.btn_open_settings).setOnClickListener {
+                startActivity(Intent().apply {
+                    action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+                    data = Uri.fromParts("package", packageName, null)
+                })
+                startLocationService(serviceAction)
+                dialog.dismiss()
+            }
+            view.findViewById<Button>(R.id.btn_continue).setOnClickListener {
+                startLocationService(serviceAction)
+                dialog.dismiss()
+            }
+            dialog.show()
+            dialog.window?.setLayout(
+                (resources.displayMetrics.widthPixels * 0.92).toInt(),
+                WindowManager.LayoutParams.WRAP_CONTENT
+            )
         } else {
-            // Pre-Q doesn't have background location permission
             startLocationService(serviceAction)
         }
     }
